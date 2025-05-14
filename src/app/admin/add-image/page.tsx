@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { storage } from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import Image from "next/image";
 
 const AddImage = () => {
   const [image, setImage] = useState<File | null>(null);
@@ -94,10 +95,13 @@ const AddImage = () => {
       {imageUrl && (
         <div className="mt-4">
           <p>Yüklenen Resim:</p>
-          <img
+          <Image
             src={imageUrl}
             alt="Yüklenen Resim"
             className="w-32 h-32 object-cover"
+            width={800}
+            height={600}
+            priority
           />
         </div>
       )}
