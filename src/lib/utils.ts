@@ -20,6 +20,7 @@ export async function getImageUrl(imagePath: string): Promise<string> {
 export async function getPaintings(categorySlug?: string) {
   try {
     let paintingsQuery: Query<DocumentData> = collection(db, 'paintings');
+    //let paintingsQuery: Query<DocumentData> = collection(db, 'painting');
 
     if (categorySlug) {
       const categoryDoc = await getCategoryBySlug(categorySlug);

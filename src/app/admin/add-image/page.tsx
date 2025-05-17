@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { storage } from "@/lib/firebase";
+import { storage, db } from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import Image from "next/image";
 
 const AddImage = () => {
@@ -11,89 +12,130 @@ const AddImage = () => {
   const [progress, setProgress] = useState<number>(0);
   const [imageUrl, setImageUrl] = useState<string>("");
 
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
+  const [date, setDate] = useState("");
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
 
     if (file) {
       setImage(file);
       setPreview(URL.createObjectURL(file));
-      console.log("Seçilen dosya:", file);
     }
   };
 
   const handleUpload = async () => {
-    if (!image) {
-      console.warn("Lütfen bir resim seçin.");
+    if (!image || !title || !description || !category || !date) {
+      alert("Lütfen tüm alanları doldurun ve bir resim seçin.");
       return;
     }
 
-    console.log("Yükleme işlemi başladı:", image);
+    const imagePath = `paintings/${image.name}`;
+    const storageRef = ref(storage, imagePath);
+    const uploadTask = uploadBytesResumable(storageRef, image);
 
-    try {
-      const storageRef = ref(storage, `images/${image.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, image);
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setProgress(progress);
+      },
+      (error) => {
+        console.error("Yükleme hatası:", error);
+      },
+      async () => {
+        try {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          setImageUrl(downloadURL);
 
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setProgress(progress);
-          console.log(`Yükleme durumu: %${Math.round(progress)}`);
-        },
-        (error) => {
-          console.error("Yükleme hatası:", error);
-        },
-        async () => {
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            setImageUrl(downloadURL);
-            console.log("Dosya başarıyla yüklendi:", downloadURL);
-          } catch (error) {
-            console.error("Download URL alma hatası:", error);
-          }
+          // Firestore'a kayıt
+          await addDoc(collection(db, "painting"), {
+            title,
+            description,
+            category,
+            date,
+            imagePath, // sadece "paintings/resim1.png"
+            createdAt: serverTimestamp(),
+          });
+
+          alert("Resim ve bilgiler başarıyla yüklendi!");
+          // Form sıfırlama
+          setImage(null);
+          setPreview(null);
+          setTitle("");
+          setDescription("");
+          setCategory("");
+          setDate("");
+          setProgress(0);
+        } catch (error) {
+          console.error("Firestore'a kayıt hatası:", error);
         }
-      );
-    } catch (error) {
-      console.error("Yükleme işlemi sırasında bir hata oluştu:", error);
-    }
+      }
+    );
   };
 
   return (
-    <div className="p-6 bg-white shadow-lg rounded-lg max-w-md mx-auto">
-      <h2 className="text-xl font-semibold mb-4">Resim Ekle</h2>
+    <div className="p-6 bg-white shadow-lg rounded-lg max-w-md mx-auto space-y-4">
+      <h2 className="text-xl font-semibold">Resim Ekle</h2>
 
       <input
         type="file"
         accept="image/*"
         onChange={handleImageChange}
-        className="mb-4"
+        className="block"
       />
 
       {preview && (
-        <div className="mb-4">
+        <div>
           <p>Önizleme:</p>
-          <img
-            src={preview}
-            alt="Önizleme"
-            className="w-32 h-32 object-cover"
-          />
+          <img src={preview} alt="Önizleme" className="w-32 h-32 object-cover" />
         </div>
       )}
 
+      <input
+        type="text"
+        placeholder="Resim Adı"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        className="w-full p-2 border rounded"
+      />
+
+      <textarea
+        placeholder="Resim Açıklaması"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        className="w-full p-2 border rounded"
+      />
+
+      <input
+        type="text"
+        placeholder="Kategori (örneğin: yağlı boya)"
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+        className="w-full p-2 border rounded"
+      />
+
+      <input
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        className="w-full p-2 border rounded"
+      />
+
       <button
         onClick={handleUpload}
-        className="px-4 py-2 bg-blue-600 text-white rounded"
+        className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
       >
         Yükle
       </button>
 
-      {progress > 0 && (
-        <div className="mt-2">Yükleme Durumu: %{Math.round(progress)}</div>
-      )}
+      {progress > 0 && <div>Yükleme Durumu: %{Math.round(progress)}</div>}
 
       {imageUrl && (
-        <div className="mt-4">
+        <div>
           <p>Yüklenen Resim:</p>
           <Image
             src={imageUrl}
