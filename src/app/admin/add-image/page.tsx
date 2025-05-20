@@ -57,7 +57,7 @@ const AddImage = () => {
             description,
             category,
             date,
-            imagePath, // sadece "paintings/resim1.png"
+            imageUrl: downloadURL, 
             createdAt: serverTimestamp(),
           });
 

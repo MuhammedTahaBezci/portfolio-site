@@ -20,7 +20,7 @@ export default async function Home() {
       {/* Hero Bölümü */}
       <section className="relative h-96 rounded-lg overflow-hidden mb-16">
         <Image
-          src="/images/hero-image.jpg" 
+          src="/images/hero-image.jpg" // Burada kendi resim URL'nizi kullanın 
           alt="Sanat Portfolyom"
           fill
           className="object-cover"
