@@ -8,6 +8,7 @@ const Sidebar = () => {
   const menuItems = [
     { name: "Resim Ekle", path: "/admin/add-image" },
     { name: "Resim Güncelle", path: "/admin/edit-image" },
+    { name: "Sergilerim", path: "/admin/exhibitions" },
   ];
 
   return (

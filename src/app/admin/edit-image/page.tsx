@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { storage } from "@/lib/firebase";
+import { storage, db } from "@/lib/firebase";
 import {
   ref,
   listAll,
@@ -9,32 +9,67 @@ import {
   uploadBytesResumable,
   deleteObject,
 } from "firebase/storage";
+import {
+  collection,
+  getDocs,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
+import { Painting } from "@/types/painting";
+import Sidebar from "@/components/Sidebar";
 
-const EditImage = () => {
-  const [images, setImages] = useState<string[]>([]);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+type PaintingWithId = Painting & { id: string };
+
+export default function EditImagePage() {
+  const [paintings, setPaintings] = useState<PaintingWithId[]>([]);
+  const [selected, setSelected] = useState<PaintingWithId | null>(null);
   const [newImage, setNewImage] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
 
-  // Resimleri Listeleme
+  // Firestore verilerini çek
   useEffect(() => {
-    const fetchImages = async () => {
-      const storageRef = ref(storage, "images");
-      try {
-        const res = await listAll(storageRef);
-        const urls = await Promise.all(
-          res.items.map((item) => getDownloadURL(item))
-        );
-        setImages(urls);
-      } catch (error) {
-        console.error("Resimler alınamadı:", error);
-      }
+    const fetchPaintings = async () => {
+      const snapshot = await getDocs(collection(db, "painting"));
+      const items = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as PaintingWithId[];
+      setPaintings(items);
+      setLoading(false);
     };
 
-    fetchImages();
+    fetchPaintings();
   }, []);
 
-  // Yeni Resim Seçme
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    if (!selected) return;
+    const { name, value } = e.target;
+    setSelected({ ...selected, [name]: value });
+  };
+
+  const handleUpdate = async () => {
+    if (!selected) return;
+
+    try {
+      const refDoc = doc(db, "painting", selected.id);
+      await updateDoc(refDoc, {
+        title: selected.title,
+        year: selected.year,
+        medium: selected.medium,
+        dimensions: selected.dimensions,
+        category: selected.category,
+        description: selected.description,
+      });
+      alert("Bilgiler güncellendi!");
+    } catch (error) {
+      console.error("Güncelleme hatası:", error);
+      alert("Bir hata oluştu.");
+    }
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -42,26 +77,17 @@ const EditImage = () => {
     }
   };
 
-  // Resmi Güncelleme
   const handleUpdateImage = async () => {
-    if (!selectedImage || !newImage) {
-      console.warn(
-        "Lütfen bir resim seçin ve yüklemek istediğiniz resmi seçin."
-      );
-      return;
-    }
+    if (!selected || !newImage) return;
 
     try {
-      console.log("Yükleme işlemi başladı...");
+      // Eski resmi sil
+      const oldRef = ref(storage, selected.imageUrl);
+      await deleteObject(oldRef);
 
-      // Eski resmi silme
-      const imageRef = ref(storage, selectedImage);
-      await deleteObject(imageRef);
-      console.log("Eski resim silindi:", selectedImage);
-
-      // Yeni resmi yükleme
-      const newImageRef = ref(storage, `images/${newImage.name}`);
-      const uploadTask = uploadBytesResumable(newImageRef, newImage);
+      // Yeni resmi yükle
+      const newRef = ref(storage, `images/${newImage.name}`);
+      const uploadTask = uploadBytesResumable(newRef, newImage);
 
       uploadTask.on(
         "state_changed",
@@ -74,70 +100,127 @@ const EditImage = () => {
           console.error("Yükleme hatası:", error);
         },
         async () => {
-          try {
-            const downloadURL = await getDownloadURL(newImageRef);
-            console.log("Yeni resim yüklendi:", downloadURL);
-            setSelectedImage(null);
-            setNewImage(null);
-            setUploadProgress(0);
+          const downloadURL = await getDownloadURL(newRef);
+          const refDoc = doc(db, "painting", selected.id);
+          await updateDoc(refDoc, { imageUrl: downloadURL });
 
-            // Resim listesini güncelle
-            const storageRef = ref(storage, "images");
-            const res = await listAll(storageRef);
-            const urls = await Promise.all(
-              res.items.map((item) => getDownloadURL(item))
-            );
-            setImages(urls);
-          } catch (error) {
-            console.error("Download URL alma hatası:", error);
-          }
+          // Local state güncelle
+          setSelected({ ...selected, imageUrl: downloadURL });
+          setNewImage(null);
+          setUploadProgress(0);
+          alert("Resim güncellendi!");
         }
       );
     } catch (error) {
-      console.error("Güncelleme hatası:", error);
+      console.error("Resim güncelleme hatası:", error);
     }
   };
 
   return (
-    <div className="p-6 bg-white shadow-lg rounded-lg max-w-xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-4">Resim Güncelle</h2>
+    <div className="flex">
+      <Sidebar />
+      <div className="flex-1 p-6">
+        <h1 className="text-2xl font-bold mb-6">Resimleri Düzenle</h1>
 
-      <div className="mb-4">
-        <label className="block mb-2">Mevcut Resimler:</label>
-        <div className="flex flex-wrap gap-4">
-          {images.map((url) => (
-            <div
-              key={url}
-              className={`border p-2 cursor-pointer ${
-                selectedImage === url ? "border-blue-500" : "border-gray-300"
-              }`}
-              onClick={() => setSelectedImage(url)}
-            >
-              <img src={url} alt="Resim" className="w-32 h-32 object-cover" />
+        {loading ? (
+          <p>Yükleniyor...</p>
+        ) : (
+          <div className="flex flex-wrap gap-4">
+            {paintings.map((painting) => (
+              <div
+                key={painting.id}
+                onClick={() => setSelected(painting)}
+                className={`border rounded-lg p-2 cursor-pointer w-32 h-32 overflow-hidden ${
+                  selected?.id === painting.id ? "ring-2 ring-blue-500" : ""
+                }`}
+              >
+                <img
+                  src={painting.imageUrl}
+                  alt={painting.title}
+                  className="object-cover w-full h-full"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {selected && (
+          <div className="mt-6 p-6 border rounded-lg bg-white shadow-md space-y-4 max-w-xl">
+            <h2 className="text-xl font-semibold">Resmi Düzenle</h2>
+
+            <input
+              type="text"
+              name="title"
+              value={selected.title}
+              onChange={handleChange}
+              placeholder="Resmin Adı"
+              className="w-full p-2 border rounded"
+            />
+            <input
+              type="text"
+              name="year"
+              value={selected.year}
+              onChange={handleChange}
+              placeholder="Yıl"
+              className="w-full p-2 border rounded"
+            />
+            <input
+              type="text"
+              name="medium"
+              value={selected.medium}
+              onChange={handleChange}
+              placeholder="Teknik"
+              className="w-full p-2 border rounded"
+            />
+            <input
+              type="text"
+              name="dimensions"
+              value={selected.dimensions}
+              onChange={handleChange}
+              placeholder="Boyut"
+              className="w-full p-2 border rounded"
+            />
+            <input
+              type="text"
+              name="category"
+              value={selected.category}
+              onChange={handleChange}
+              placeholder="Kategori"
+              className="w-full p-2 border rounded"
+            />
+            <textarea
+              name="description"
+              value={selected.description}
+              onChange={handleChange}
+              placeholder="Açıklama"
+              className="w-full p-2 border rounded"
+            />
+
+            <div className="mb-4">
+              <label className="block mb-2 font-medium">Yeni Resim:</label>
+              <input type="file" accept="image/*" onChange={handleImageChange} />
+              {uploadProgress > 0 && (
+                <div className="mt-2 text-sm text-gray-700">
+                  Yükleniyor: %{Math.round(uploadProgress)}
+                </div>
+              )}
+              <button
+                onClick={handleUpdateImage}
+                className="mt-2 w-full py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              >
+                Resmi Güncelle
+              </button>
             </div>
-          ))}
-        </div>
+
+            <button
+              onClick={handleUpdate}
+              className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Bilgileri Güncelle
+            </button>
+          </div>
+        )}
       </div>
-
-      <div className="mb-4">
-        <label className="block mb-2">Yeni Resim Yükle:</label>
-        <input type="file" accept="image/*" onChange={handleImageChange} />
-      </div>
-
-      {uploadProgress > 0 && (
-        <div className="mb-4">
-          Yükleme Durumu: %{Math.round(uploadProgress)}
-        </div>
-      )}
-
-      <button
-        onClick={handleUpdateImage}
-        className="px-4 py-2 bg-blue-600 text-white rounded"
-      >
-        Güncelle
-      </button>
     </div>
   );
-};
-
-export default EditImage;
+}

@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where, Query, DocumentData } from 'firebase/firestore';
+import { collection, getDocs, query, where, Query, DocumentData, doc, getDoc } from 'firebase/firestore';
 import { db, storage } from './firebase';
 import { BlogPost } from '@/types/blog';
 import { Exhibition } from '@/types/exhibition';
@@ -20,7 +20,6 @@ export async function getImageUrl(imagePath: string): Promise<string> {
 export async function getPaintings(categorySlug?: string) {
   try {
     let paintingsQuery: Query<DocumentData> = collection(db, 'paintings');
-    //let paintingsQuery: Query<DocumentData> = collection(db, 'painting');
 
     if (categorySlug) {
       const categoryDoc = await getCategoryBySlug(categorySlug);
@@ -34,11 +33,11 @@ export async function getPaintings(categorySlug?: string) {
 
     for (const doc of snapshot.docs) {
       const data = doc.data();
-      const imageUrl = await getImageUrl(data.imagePath); // ✅ imagePath'ten URL al
+      const imageUrl = await getImageUrl(data.imagePath);
       paintings.push({
         id: doc.id,
         ...data,
-        imageUrl, // 🔁 imageUrl’i ekliyoruz
+        imageUrl,
       } as Painting);
     }
 
@@ -48,7 +47,6 @@ export async function getPaintings(categorySlug?: string) {
     return [];
   }
 }
-
 
 // Kategorileri getir
 export async function getCategories() {
@@ -79,13 +77,90 @@ export async function getCategoryBySlug(slug: string) {
 }
 
 // Sergileri getir
-export async function getExhibitions() {
+export async function getExhibitions(): Promise<Exhibition[]> {
   try {
     const snapshot = await getDocs(collection(db, 'exhibitions'));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exhibition));
+    const exhibitions: Exhibition[] = [];
+    
+    for (const docSnapshot of snapshot.docs) {
+      const data = docSnapshot.data();
+      
+      // Firestore Timestamp'ları JavaScript Date objelerine çevirme
+      let startDate: Date;
+      let endDate: Date;
+      
+      try {
+        startDate = data.startDate?.toDate ? data.startDate.toDate() : new Date(data.startDate);
+        endDate = data.endDate?.toDate ? data.endDate.toDate() : new Date(data.endDate);
+      } catch (dateError) {
+        console.warn(`Tarih dönüştürme hatası (${docSnapshot.id}):`, dateError);
+        startDate = new Date();
+        endDate = new Date();
+      }
+      
+      const exhibition: Exhibition = {
+        id: docSnapshot.id,
+        title: data.title || 'Başlıksız Sergi',
+        startDate,
+        endDate,
+        date: `${formatDate(startDate)} - ${formatDate(endDate)}`,
+        location: data.location || '',
+        description: data.description || '',
+        imageUrl: data.imageUrl || '',
+        images: Array.isArray(data.images) ? data.images : [],
+        galleryName: data.galleryName || '',
+        galleryUrl: data.galleryUrl || '',
+      };
+      
+      exhibitions.push(exhibition);
+    }
+    
+    return exhibitions;
   } catch (error) {
     console.error('Error fetching exhibitions:', error);
     return [];
+  }
+}
+
+// ID ile sergi detayını getir
+export async function getExhibitionById(id: string): Promise<Exhibition | null> {
+  try {
+    const exhibitionDoc = await getDoc(doc(db, 'exhibitions', id));
+    
+    if (!exhibitionDoc.exists()) {
+      return null;
+    }
+    
+    const data = exhibitionDoc.data();
+    
+    let startDate: Date;
+    let endDate: Date;
+    
+    try {
+      startDate = data.startDate?.toDate ? data.startDate.toDate() : new Date(data.startDate);
+      endDate = data.endDate?.toDate ? data.endDate.toDate() : new Date(data.endDate);
+    } catch (dateError) {
+      console.warn(`Tarih dönüştürme hatası (${id}):`, dateError);
+      startDate = new Date();
+      endDate = new Date();
+    }
+    
+    return {
+      id: exhibitionDoc.id,
+      title: data.title || 'Başlıksız Sergi',
+      startDate,
+      endDate,
+      date: `${formatDate(startDate)} - ${formatDate(endDate)}`,
+      location: data.location || '',
+      description: data.description || '',
+      imageUrl: data.imageUrl || '',
+      images: Array.isArray(data.images) ? data.images : [],
+      galleryName: data.galleryName || '',
+      galleryUrl: data.galleryUrl || '',
+    };
+  } catch (error) {
+    console.error('Error fetching exhibition by ID:', error);
+    return null;
   }
 }
 
@@ -118,11 +193,16 @@ export async function getBlogPostBySlug(slug: string) {
 }
 
 // Tarih formatını düzenle
-export function formatDate(dateString: string) {
-  const options: Intl.DateTimeFormatOptions = { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  };
-  return new Date(dateString).toLocaleDateString('tr-TR', options);
+export function formatDate(dateString: string | number | Date): string {
+  try {
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    };
+    return new Date(dateString).toLocaleDateString('tr-TR', options);
+  } catch (error) {
+    console.error('Tarih formatlama hatası:', error);
+    return 'Geçersiz tarih';
+  }
 }
