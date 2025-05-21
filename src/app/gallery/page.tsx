@@ -1,16 +1,24 @@
+// src/app/gallery/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import Image from "next/image";
+import { Painting } from "@/types/painting";
+import ImageCard from "@/components/ImageCard";
+import ImageModal from "@/components/ImageModal";
 
 const Gallery = () => {
-  const [paintings, setPaintings] = useState<any[]>([]);
+  const [paintings, setPaintings] = useState<Painting[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("Tümü");
+  const [selectedPainting, setSelectedPainting] = useState<Painting | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPaintings = async () => {
       try {
+        setLoading(true);
         const q = query(
           collection(db, "painting"),
           orderBy("createdAt", "desc")
@@ -19,48 +27,104 @@ const Gallery = () => {
         const paintingData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
-        }));
+        })) as Painting[];
+        
         setPaintings(paintingData);
+        
+        // Kategorileri topla
+        const uniqueCategories = Array.from(
+          new Set(paintingData.map((p) => p.category).filter(Boolean))
+        ) as string[];
+        
+        setCategories(uniqueCategories);
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching paintings: ", error);
+        setLoading(false);
       }
     };
 
     fetchPaintings();
   }, []);
 
-  return (
-    <div className="p-6 bg-white shadow-lg rounded-lg max-w-4xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-4">Galeri</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {paintings.length > 0 ? (
-          paintings.map((painting) => {
-            const isValidSrc = typeof painting.imageUrl === "string" && painting.imageUrl.trim() !== "";
+  const filteredPaintings = selectedCategory === "Tümü"
+    ? paintings
+    : paintings.filter((p) => p.category === selectedCategory);
 
-            return (
-              <div key={painting.id} className="bg-gray-100 p-4 rounded-lg">
-                {isValidSrc && (
-                  <Image
-                    src={painting.imageUrl}
-                    alt={painting.title || "Resim"}
-                    width={800}
-                    height={600}
-                    className="w-full h-auto object-cover rounded"
-                  />
-                )}
-                <h3 className="text-lg font-medium mt-2">{painting.title}</h3>
-                <p className="text-sm text-gray-600">{painting.description}</p>
-                <p className="text-sm text-gray-400">{painting.category}</p>
-                <p className="text-sm text-gray-400">{painting.date}</p>
-              </div>
-            );
-          })
-        ) : (
-          <p>Henüz yüklenmiş resim yok.</p>
-        )}
+  const openModal = (painting: Painting) => {
+    setSelectedPainting(painting);
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeModal = () => {
+    setSelectedPainting(null);
+    document.body.style.overflow = "auto";
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-12">
+      <h1 className="text-3xl font-bold mb-8 text-center">Galeri</h1>
+      
+      {/* Kategori Filtreleme */}
+      <div className="flex flex-wrap gap-2 justify-center mb-10">
+        <button
+          className={`px-4 py-2 rounded-full transition-colors ${
+            selectedCategory === "Tümü"
+              ? "bg-indigo-600 text-white"
+              : "bg-gray-100 hover:bg-gray-200"
+          }`}
+          onClick={() => setSelectedCategory("Tümü")}
+        >
+          Tümü
+        </button>
+        
+        {categories.map((category) => (
+          <button
+            key={category}
+            className={`px-4 py-2 rounded-full transition-colors ${
+              selectedCategory === category
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-100 hover:bg-gray-200"
+            }`}
+            onClick={() => setSelectedCategory(category)}
+          >
+            {category}
+          </button>
+        ))}
       </div>
+
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        </div>
+      ) : (
+        <>
+          {filteredPaintings.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPaintings.map((painting) => (
+                <ImageCard
+                  key={painting.id}
+                  painting={painting}
+                  onClick={() => openModal(painting)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-xl text-gray-500">Bu kategoride henüz eser bulunmamaktadır.</p>
+            </div>
+          )}
+        </>
+      )}
+
+      {selectedPainting && (
+        <ImageModal
+          painting={selectedPainting}
+          onClose={closeModal}
+        />
+      )}
     </div>
   );
-};
+}
 
 export default Gallery;
