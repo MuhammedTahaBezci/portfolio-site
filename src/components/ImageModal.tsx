@@ -18,7 +18,7 @@ export default function ImageModal({ painting, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="relative max-w-6xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden zoom-in"
+        className="relative max-w-7xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden zoom-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Kapatma Butonu */}
@@ -32,7 +32,7 @@ export default function ImageModal({ painting, onClose }: Props) {
 
         <div className="flex flex-col md:flex-row">
           {/* Sol: Resim */}
-          <div className="md:w-2/3 relative h-96 md:h-[600px] bg-black">
+          <div className="md:w-3/4 relative h-96 md:h-[600px] bg-black">
             <Image
               src={painting.imageUrl}
               alt={painting.title}
@@ -43,7 +43,7 @@ export default function ImageModal({ painting, onClose }: Props) {
           </div>
 
           {/* Sağ: Bilgiler */}
-          <div className="md:w-1/3 p-6 bg-gray-50 flex flex-col justify-between">
+          <div className="md:w-1/4 p-6 pt-10 bg-gray-50 flex flex-col justify-between">
             <div>
               <h2 className="text-2xl font-bold mb-3">{painting.title}</h2>
 

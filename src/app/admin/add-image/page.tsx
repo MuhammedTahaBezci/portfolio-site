@@ -12,10 +12,12 @@ const AddImage = () => {
   const [progress, setProgress] = useState<number>(0);
   const [imageUrl, setImageUrl] = useState<string>("");
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [date, setDate] = useState("");
+  const [title, setTitle] = useState("");        // Resmin adı
+  const [year, setYear] = useState("");          // Tarih (yıl)
+  const [medium, setMedium] = useState("");      // Teknik
+  const [dimensions, setDimensions] = useState(""); // Boyut
+  const [description, setDescription] = useState(""); // Açıklama
+  const [category, setCategory] = useState("");   // Kategori
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -27,7 +29,7 @@ const AddImage = () => {
   };
 
   const handleUpload = async () => {
-    if (!image || !title || !description || !category || !date) {
+    if (!image || !title || !year || !medium || !dimensions || !description || !category) {
       alert("Lütfen tüm alanları doldurun ve bir resim seçin.");
       return;
     }
@@ -54,10 +56,12 @@ const AddImage = () => {
           // Firestore'a kayıt
           await addDoc(collection(db, "painting"), {
             title,
+            year,
+            medium,
+            dimensions,
             description,
             category,
-            date,
-            imageUrl: downloadURL, 
+            imageUrl: downloadURL,
             createdAt: serverTimestamp(),
           });
 
@@ -66,9 +70,11 @@ const AddImage = () => {
           setImage(null);
           setPreview(null);
           setTitle("");
+          setYear("");
+          setMedium("");
+          setDimensions("");
           setDescription("");
           setCategory("");
-          setDate("");
           setProgress(0);
         } catch (error) {
           console.error("Firestore'a kayıt hatası:", error);
@@ -97,14 +103,38 @@ const AddImage = () => {
 
       <input
         type="text"
-        placeholder="Resim Adı"
+        placeholder="Resmin Adı"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         className="w-full p-2 border rounded"
       />
 
+      <input
+        type="text"
+        placeholder="Yıl (örnek: 2023)"
+        value={year}
+        onChange={(e) => setYear(e.target.value)}
+        className="w-full p-2 border rounded"
+      />
+
+      <input
+        type="text"
+        placeholder="Teknik (örneğin: Yağlı boya)"
+        value={medium}
+        onChange={(e) => setMedium(e.target.value)}
+        className="w-full p-2 border rounded"
+      />
+
+      <input
+        type="text"
+        placeholder="Boyut (örneğin: 50x70 cm)"
+        value={dimensions}
+        onChange={(e) => setDimensions(e.target.value)}
+        className="w-full p-2 border rounded"
+      />
+
       <textarea
-        placeholder="Resim Açıklaması"
+        placeholder="Ressamın Açıklaması"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         className="w-full p-2 border rounded"
@@ -112,16 +142,9 @@ const AddImage = () => {
 
       <input
         type="text"
-        placeholder="Kategori (örneğin: yağlı boya)"
+        placeholder="Kategori (örneğin: Portre)"
         value={category}
         onChange={(e) => setCategory(e.target.value)}
-        className="w-full p-2 border rounded"
-      />
-
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
         className="w-full p-2 border rounded"
       />
 
