@@ -32,7 +32,7 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <span className="font-serif text-xl font-bold text-gray-800">Sanat Portfolyom</span>
+              <span className="font-serif text-xl font-bold text-gray-800">Muhammed Taha Bezci</span>
             </Link>
           </div>
           

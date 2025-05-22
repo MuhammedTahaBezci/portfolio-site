@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Exhibition } from "@/types/exhibition";
-import ExhibitionModal from "@/components/ExhibitionModal";
+import { Exhibition, getExhibitionStatus } from "@/types/exhibition";
+import ExhibitionModal from "./ExhibitionModal";
 
 interface ExhibitionListProps {
   exhibitions: Exhibition[];
@@ -27,10 +27,19 @@ export default function ExhibitionList({ exhibitions }: ExhibitionListProps) {
     }).format(new Date(date));
   };
 
-  const isUpcoming = (exhibition: Exhibition) => {
-    const now = new Date();
-    const endDate = new Date(exhibition.endDate);
-    return endDate >= now;
+  const getStatusInfo = (exhibition: Exhibition) => {
+    const status = getExhibitionStatus(exhibition);
+    
+    switch (status) {
+      case 'upcoming':
+        return { text: 'Yaklaşan', bgColor: 'bg-blue-100', textColor: 'text-blue-800' };
+      case 'current':
+        return { text: 'Devam Ediyor', bgColor: 'bg-green-100', textColor: 'text-green-800' };
+      case 'past':
+        return { text: 'Sona Ermiş', bgColor: 'bg-gray-100', textColor: 'text-gray-600' };
+      default:
+        return { text: 'Belirsiz', bgColor: 'bg-gray-100', textColor: 'text-gray-600' };
+    }
   };
 
   if (exhibitions.length === 0) {
@@ -51,17 +60,16 @@ export default function ExhibitionList({ exhibitions }: ExhibitionListProps) {
             onClick={() => openModal(exhibition)}
           >
             <div className="relative overflow-hidden rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300">
-              {/* Upcoming/Past Badge */}
+              {/* Status Badge */}
               <div className="absolute top-3 left-3 z-10">
-                <span
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    isUpcoming(exhibition)
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {isUpcoming(exhibition) ? "Yaklaşan" : "Geçmiş"}
-                </span>
+                {(() => {
+                  const statusInfo = getStatusInfo(exhibition);
+                  return (
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusInfo.bgColor} ${statusInfo.textColor}`}>
+                      {statusInfo.text}
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* Exhibition Image */}

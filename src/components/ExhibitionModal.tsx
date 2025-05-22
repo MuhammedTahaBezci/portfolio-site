@@ -161,15 +161,35 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
 
                 {/* Status */}
                 <div className="inline-block">
-                  <span
-                    className={`px-3 py-1 text-sm font-medium rounded-full ${
-                      new Date(exhibition.endDate) >= new Date()
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {new Date(exhibition.endDate) >= new Date() ? "Devam Ediyor" : "Sona Erdi"}
-                  </span>
+                  {(() => {
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    
+                    const startDate = new Date(exhibition.startDate);
+                    const endDate = new Date(exhibition.endDate);
+                    startDate.setHours(0, 0, 0, 0);
+                    endDate.setHours(23, 59, 59, 999);
+                    
+                    if (startDate > now) {
+                      return (
+                        <span className="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800">
+                          Yaklaşan Sergi
+                        </span>
+                      );
+                    } else if (startDate <= now && endDate >= now) {
+                      return (
+                        <span className="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800">
+                          Devam Ediyor
+                        </span>
+                      );
+                    } else {
+                      return (
+                        <span className="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-600">
+                          Sona Ermiş
+                        </span>
+                      );
+                    }
+                  })()}
                 </div>
 
                 {/* Description */}
