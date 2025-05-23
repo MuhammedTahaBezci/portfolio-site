@@ -1,3 +1,4 @@
+//admin/exhibitions/page.tsx
 "use client";
 
 import { useState, useEffect, ChangeEvent } from "react";
@@ -126,8 +127,16 @@ export default function AdminExhibitionsPage() {
     try {
       const exhibitionData = {
         title: selected.title.trim(),
-        startDate: Timestamp.fromDate(new Date(selected.startDate)),
-        endDate: Timestamp.fromDate(new Date(selected.endDate)),
+        startDate: Timestamp.fromDate(
+          selected.startDate instanceof Timestamp
+            ? selected.startDate.toDate()
+            : new Date(selected.startDate)
+        ),
+        endDate: Timestamp.fromDate(
+          selected.endDate instanceof Timestamp
+            ? selected.endDate.toDate()
+            : new Date(selected.endDate)
+        ),
         location: selected.location?.trim() || "",
         description: selected.description?.trim() || "",
         galleryName: selected.galleryName?.trim() || "",

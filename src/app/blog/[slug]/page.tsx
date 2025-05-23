@@ -1,17 +1,23 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import ReactMarkdown from 'react-markdown'
-import { getBlogPostBySlug } from '@/lib/utils' // <-- Düzeltildi
+import { useRouter, useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { getBlogPostBySlug } from '@/lib/utils';
+import Image from 'next/image';
 
-export default function BlogDetailPage({ params }: { params: { slug: string } }) {
+export default function BlogDetailPage() {
   const router = useRouter();
+  const params = useParams(); // <- slug artık buradan alınmalı
+  const slug = params?.slug as string;
+
   const [post, setPost] = useState<any>(null);
 
   useEffect(() => {
+    if (!slug) return;
+
     const fetchData = async () => {
-      const data = await getBlogPostBySlug(params.slug);
+      const data = await getBlogPostBySlug(slug);
       if (!data) {
         router.push('/404');
         return;
@@ -20,24 +26,38 @@ export default function BlogDetailPage({ params }: { params: { slug: string } })
     };
 
     fetchData();
-  }, [params.slug, router]);
+  }, [slug, router]);
 
   if (!post) {
-    return <div>Yükleniyor...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <span className="text-gray-500 text-lg">Yükleniyor...</span>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-2">{post.title}</h1>
-      <p className="text-gray-500 text-sm mb-4">{post.publishDate}</p>
+    <div className="max-w-4xl mx-auto px-4 py-10">
+      <h1 className="text-4xl font-bold mb-4 text-gray-900">{post.title}</h1>
+      <div className="flex items-center text-sm text-gray-500 mb-6">
+        <span>{new Date(post.publishDate).toLocaleDateString('tr-TR')}</span>
+        <span className="mx-2">•</span>
+        <span>{post.author || 'Yazar Bilinmiyor'}</span>
+      </div>
+
       {post.imageUrl && (
-        <img
-          src={post.imageUrl}
-          alt={post.title}
-          className="w-full h-64 object-cover rounded mb-6"
-        />
+        <div className="relative w-full h-96 mb-8 rounded-xl overflow-hidden shadow-md">
+          <Image
+            src={post.imageUrl}
+            alt={post.title}
+            fill
+            className="object-cover"
+            sizes="100vw"
+          />
+        </div>
       )}
-      <article className="prose prose-lg max-w-none">
+
+      <article className="prose prose-lg prose-blue max-w-none dark:prose-invert">
         <ReactMarkdown>{post.content}</ReactMarkdown>
       </article>
     </div>
