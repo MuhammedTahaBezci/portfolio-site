@@ -10,6 +10,8 @@ const Sidebar = () => {
     { name: "Resim Güncelle", path: "/admin/edit-image" },
     { name: "Sergileri Güncelle", path: "/admin/exhibitions" },
     { name: "Blog", path: "/admin/blog" },
+    { name: "Hakkımda", path: "/admin/about" },
+    { name: "İletişim Mesajları", path: "/admin/messages" },
   ];
 
   return (

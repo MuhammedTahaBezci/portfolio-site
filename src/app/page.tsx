@@ -60,7 +60,9 @@ export default async function Home() {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {featuredPaintings.map((painting) => (
-            <ImageCard key={painting.id} painting={painting} />
+            <ImageCard key={painting.id} painting={painting} onClick={function (): void {
+              throw new Error('Function not implemented.');
+            } } />
           ))}
         </div>
       </section>
