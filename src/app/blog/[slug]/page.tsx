@@ -8,7 +8,7 @@ import Image from 'next/image';
 
 export default function BlogDetailPage() {
   const router = useRouter();
-  const params = useParams(); // <- slug artık buradan alınmalı
+  const params = useParams();
   const slug = params?.slug as string;
 
   const [post, setPost] = useState<any>(null);
@@ -31,15 +31,15 @@ export default function BlogDetailPage() {
   if (!post) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <span className="text-gray-500 text-lg">Yükleniyor...</span>
+        <span className="text-neutral-500 text-lg">Yükleniyor...</span>
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
-      <h1 className="text-4xl font-bold mb-4 text-gray-900">{post.title}</h1>
-      <div className="flex items-center text-sm text-gray-500 mb-6">
+      <h1 className="text-4xl font-bold mb-4 text-neutral-900">{post.title}</h1>
+      <div className="flex items-center text-sm text-neutral-500 mb-6">
         <span>{new Date(post.publishDate).toLocaleDateString('tr-TR')}</span>
         <span className="mx-2">•</span>
         <span>{post.author || 'Yazar Bilinmiyor'}</span>
@@ -57,7 +57,7 @@ export default function BlogDetailPage() {
         </div>
       )}
 
-      <article className="prose prose-lg prose-blue max-w-none dark:prose-invert">
+      <article className="prose prose-lg prose-neutral max-w-none dark:prose-invert">
         <ReactMarkdown>{post.content}</ReactMarkdown>
       </article>
     </div>

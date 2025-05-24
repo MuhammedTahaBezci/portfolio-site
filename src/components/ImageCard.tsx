@@ -29,8 +29,8 @@ export default function ImageCard({ painting, onClick }: ImageCardProps) {
         />
 
         {isHovered && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm transition-opacity duration-300">
-            <span className="text-white text-lg font-semibold text-center px-4">
+          <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/30 backdrop-blur-sm transition-opacity duration-300">
+            <span className="text-neutral-50 text-lg font-semibold text-center px-4">
               {painting.title}
             </span>
           </div>

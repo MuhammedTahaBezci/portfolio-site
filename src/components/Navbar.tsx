@@ -22,17 +22,18 @@ export default function Navbar() {
     { href: '/contact', label: 'İletişim' },
   ];
 
+
   const isActive = (path: string) => {
-    return pathname === path ? 'text-yellow-500' : 'text-gray-600 hover:text-yellow-500';
+    return pathname === path ? 'text-primary-600' : 'text-neutral-600 hover:text-primary-600';
   };
 
   return (
-    <nav className="bg-white shadow-md">
+    <nav className="bg-neutral-background shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <span className="font-serif text-xl font-bold text-gray-800">Muhammed Taha Bezci</span>
+              <span className="font-serif text-xl font-bold text-neutral-900">Muhammed Taha Bezci</span>
             </Link>
           </div>
           
@@ -53,7 +54,7 @@ export default function Navbar() {
           <div className="md:hidden flex items-center">
             <button
               onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-yellow-500"
+              className="inline-flex items-center justify-center p-2 rounded-md text-neutral-400 hover:text-neutral-500 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent-500"
               aria-expanded="false"
             >
               <span className="sr-only">Ana menüyü aç</span>

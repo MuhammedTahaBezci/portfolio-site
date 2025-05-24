@@ -1,4 +1,3 @@
-// components/ContactForm.tsx - Geliştirilmiş iletişim formu
 'use client';
 
 import { useState, FormEvent } from 'react';
@@ -20,7 +19,7 @@ const Button = ({
     <button
       type={type}
       disabled={disabled}
-      className={`px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition duration-300 font-medium
+      className={`px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition duration-300 font-medium
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
       {...props}
     >
@@ -35,7 +34,7 @@ const Card = ({
   className = "",
 }: React.PropsWithChildren<{ className?: string }>) => {
   return (
-    <div className={`bg-white shadow-lg rounded-lg p-6 ${className}`}>
+    <div className={`bg-background shadow-lg rounded-lg p-6 ${className}`}>
       {children}
     </div>
   );
@@ -57,7 +56,7 @@ export default function ContactForm() {
     }
     
     setIsSubmitting(true);
-    setSubmitStatus('idle');
+    setSubmitStatus('idle'); // Yeni gönderimde durumu sıfırla
     
     try {
       const success = await sendContactMessage(name.trim(), email.trim(), message.trim(), subject.trim());
@@ -73,7 +72,6 @@ export default function ContactForm() {
         setSubmitStatus('error');
       }
       
-      // 5 saniye sonra durumu sıfırla
       setTimeout(() => {
         setSubmitStatus('idle');
       }, 5000);
@@ -81,7 +79,6 @@ export default function ContactForm() {
       console.error('Mesaj gönderme hatası:', error);
       setSubmitStatus('error');
       
-      // 5 saniye sonra durumu sıfırla
       setTimeout(() => {
         setSubmitStatus('idle');
       }, 5000);
@@ -91,10 +88,10 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-2xl">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2 text-center">İletişim</h2>
-        <p className="text-gray-600 text-center mb-8">
+    <div className="w-full max-w-2xl">
+      <Card>
+        <h2 className="text-3xl font-bold text-neutral-900 mb-2 text-center">İletişim</h2>
+        <p className="text-neutral-600 text-center mb-8">
           Sorularınız, projeleriniz ve iş birliği teklifleriniz için bana ulaşın.
         </p>
 
@@ -133,7 +130,7 @@ export default function ContactForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="name" className="block text-sm font-medium text-neutral-700 mb-2">
                 Ad Soyad <span className="text-red-500">*</span>
               </label>
               <input
@@ -141,14 +138,14 @@ export default function ContactForm() {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition duration-200"
+                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition duration-200"
                 placeholder="Adınızı ve soyadınızı girin"
                 required
               />
             </div>
             
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-neutral-700 mb-2">
                 E-posta <span className="text-red-500">*</span>
               </label>
               <input
@@ -156,7 +153,7 @@ export default function ContactForm() {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition duration-200"
+                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition duration-200"
                 placeholder="E-posta adresinizi girin"
                 required
               />
@@ -164,7 +161,7 @@ export default function ContactForm() {
           </div>
           
           <div>
-            <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="subject" className="block text-sm font-medium text-neutral-700 mb-2">
               Konu
             </label>
             <input
@@ -172,13 +169,13 @@ export default function ContactForm() {
               id="subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition duration-200"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition duration-200"
               placeholder="Mesajınızın konusu (isteğe bağlı)"
             />
           </div>
           
           <div>
-            <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="message" className="block text-sm font-medium text-neutral-700 mb-2">
               Mesaj <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -186,7 +183,7 @@ export default function ContactForm() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={6}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition duration-200 resize-vertical"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition duration-200 resize-vertical"
               placeholder="Mesajınızı buraya yazın..."
               required
             ></textarea>

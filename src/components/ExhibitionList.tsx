@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Exhibition, getExhibitionStatus } from "@/types/exhibition";
-import ExhibitionModal from "./ExhibitionModal";
+import ExhibitionModal from "./ExhibitionModal"; 
 
 interface ExhibitionListProps {
   exhibitions: Exhibition[];
@@ -13,10 +13,12 @@ export default function ExhibitionList({ exhibitions }: ExhibitionListProps) {
 
   const openModal = (exhibition: Exhibition) => {
     setSelectedExhibition(exhibition);
+    document.body.style.overflow = "hidden"; // Modal açıldığında kaydırmayı engelle
   };
 
   const closeModal = () => {
     setSelectedExhibition(null);
+    document.body.style.overflow = "auto"; // Modal kapandığında kaydırmayı etkinleştir
   };
 
   const formatDate = (date: string | number | Date) => {
@@ -45,7 +47,7 @@ export default function ExhibitionList({ exhibitions }: ExhibitionListProps) {
   if (exhibitions.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 text-lg">Henüz sergi bulunmamaktadır.</p>
+        <p className="text-neutral-500 text-lg">Henüz sergi bulunmamaktadır.</p>
       </div>
     );
   }
@@ -59,7 +61,7 @@ export default function ExhibitionList({ exhibitions }: ExhibitionListProps) {
             className="cursor-pointer group"
             onClick={() => openModal(exhibition)}
           >
-            <div className="relative overflow-hidden rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300">
+            <div className="relative overflow-hidden rounded-lg bg-neutral-background shadow-md hover:shadow-lg transition-shadow duration-300">
               {/* Status Badge */}
               <div className="absolute top-3 left-3 z-10">
                 {(() => {
@@ -81,41 +83,41 @@ export default function ExhibitionList({ exhibitions }: ExhibitionListProps) {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-400 text-4xl">🎨</span>
+                  <div className="w-full h-full bg-neutral-200 flex items-center justify-center">
+                    <span className="text-neutral-400 text-4xl">🎨</span>
                   </div>
                 )}
               </div>
 
               {/* Exhibition Info */}
               <div className="p-4">
-                <h3 className="font-bold text-lg mb-2 line-clamp-2">
+                <h3 className="font-bold text-lg mb-2 line-clamp-2 text-neutral-900">
                   {exhibition.title}
                 </h3>
                 
-                <div className="space-y-1 text-sm text-gray-600">
+                <div className="space-y-1 text-sm text-neutral-600">
                   <p className="flex items-center">
-                    <span className="mr-2">📅</span>
+                    <span className="mr-2 text-neutral-500">📅</span> 
                     {formatDate(exhibition.startDate)} - {formatDate(exhibition.endDate)}
                   </p>
                   
                   {exhibition.location && (
                     <p className="flex items-center">
-                      <span className="mr-2">📍</span>
+                      <span className="mr-2 text-neutral-500">📍</span>
                       {exhibition.location}
                     </p>
                   )}
                   
                   {exhibition.galleryName && (
                     <p className="flex items-center">
-                      <span className="mr-2">🏛️</span>
+                      <span className="mr-2 text-neutral-500">🏛️</span> 
                       {exhibition.galleryName}
                     </p>
                   )}
                 </div>
 
                 {exhibition.description && (
-                  <p className="text-gray-600 text-sm mt-3 line-clamp-2">
+                  <p className="text-neutral-600 text-sm mt-3 line-clamp-2">
                     {exhibition.description}
                   </p>
                 )}

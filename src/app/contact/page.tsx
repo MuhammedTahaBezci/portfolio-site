@@ -1,13 +1,12 @@
 // app/contact/page.tsx
-'use client'; // Bu sayfanın client side'da çalışmasını sağlar
+'use client';
 
-import ContactForm from '@/components/ContactForm'; // Doğru yolu belirttiğinizden emin olun
+import ContactForm from '@/components/ContactForm';
 
-// Page bileşeniniz
 export default function ContactPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      {/* ContactForm bileşenini doğrudan çağırıyoruz */}
+    // bg-gray-50 yerine bg-background kullanıldı
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <ContactForm />
     </div>
   );

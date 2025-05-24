@@ -1,4 +1,5 @@
 // app/about/page.tsx
+
 import { getAboutData } from '@/lib/about';
 import { Metadata } from 'next';
 import AboutContent from '@/components/AboutContent';
@@ -29,8 +30,8 @@ export default async function AboutPage() {
   if (!aboutData) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Hakkımda</h1>
-        <p className="text-gray-600">Hakkımda bilgileri yüklenemedi. Lütfen daha sonra tekrar deneyin veya yöneticinizle iletişime geçin.</p>
+        <h1 className="text-2xl font-bold text-neutral-900 mb-4">Hakkımda</h1>
+        <p className="text-neutral-600">Hakkımda bilgileri yüklenemedi. Lütfen daha sonra tekrar deneyin veya yöneticinizle iletişime geçin.</p>
       </div>
     );
   }

@@ -1,7 +1,8 @@
+// src/components/BlogPostCard.tsx
 import Link from 'next/link';
 import Image from 'next/image';
 import { BlogPost } from '@/types/blog';
-import { formatDate } from '@/lib/utils';
+import { formatDate } from '@/lib/utils'; 
 
 interface BlogPostCardProps {
   post: BlogPost;
@@ -9,7 +10,8 @@ interface BlogPostCardProps {
 
 export default function BlogPostCard({ post }: BlogPostCardProps) {
   return (
-    <article className="w-full max-w-7xl mx-auto rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-white via-gray-50 to-gray-100 border border-gray-200/70 backdrop-blur-md">
+    <article className="w-full max-w-7xl mx-auto rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 
+                        bg-background border border-neutral-200/70 backdrop-blur-md">
       <Link href={`/blog/${post.slug}`} className="flex flex-col md:flex-row w-full group">
 
         {/* Görsel */}
@@ -26,19 +28,19 @@ export default function BlogPostCard({ post }: BlogPostCardProps) {
         {/* İçerik */}
         <div className="p-8 flex flex-col justify-between w-full">
           {/* Tarih ve yazar */}
-          <div className="flex items-center text-sm text-gray-500 mb-3">
+          <div className="flex items-center text-sm text-neutral-500 mb-3">
             <time dateTime={post.publishDate}>{formatDate(post.publishDate)}</time>
             <span className="mx-2">•</span>
-            <span className="text-gray-700 font-semibold">{post.author}</span>
+            <span className="text-neutral-700 font-semibold">{post.author}</span>
           </div>
 
           {/* Başlık */}
-          <h2 className="text-3xl font-bold text-gray-900 mb-4 tracking-tight group-hover:text-blue-600 transition-colors duration-300">
+          <h2 className="text-3xl font-bold text-neutral-900 mb-4 tracking-tight group-hover:text-primary-600 transition-colors duration-300">
             {post.title}
           </h2>
 
           {/* Özet */}
-          <p className="text-gray-800 text-lg leading-relaxed line-clamp-3 mb-5">
+          <p className="text-neutral-800 text-lg leading-relaxed line-clamp-3 mb-5">
             {post.excerpt}
           </p>
 
@@ -48,21 +50,20 @@ export default function BlogPostCard({ post }: BlogPostCardProps) {
               {post.tags.slice(0, 3).map((tag, index) => (
                 <span
                   key={index}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700"
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-700" /* Etiket renkleri güncellendi */
                 >
                   #{tag}
                 </span>
               ))}
               {post.tags.length > 3 && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-neutral-100 text-neutral-600"> /* Diğer etiket rengi güncellendi */
                   +{post.tags.length - 3}
                 </span>
               )}
             </div>
           )}
 
-          {/* Devamını oku */}
-          <div className="text-blue-600 font-medium text-base hover:text-blue-700 flex items-center transition-all duration-300">
+          <div className="text-primary-600 font-medium text-base hover:text-primary-700 flex items-center transition-all duration-300">
             <span>Devamını oku</span>
             <svg
               className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"

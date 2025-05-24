@@ -1,7 +1,8 @@
+// src/components/ExhibitionModal.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { Exhibition } from "@/types/exhibition";
+import { Exhibition } from "@/types/exhibition"; 
 
 interface ExhibitionModalProps {
   exhibition: Exhibition;
@@ -11,7 +12,6 @@ interface ExhibitionModalProps {
 export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModalProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Modal açılırken body scroll'unu engelle
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
@@ -19,7 +19,6 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
     };
   }, []);
 
-  // ESC tuşu ile modal kapatma
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -55,24 +54,24 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-75 transition-opacity"
+        className="fixed inset-0 bg-neutral-900/75 transition-opacity"
         onClick={onClose}
       />
       
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="relative bg-background rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 bg-black bg-opacity-50 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-opacity-70 transition-colors"
+            className="absolute top-4 right-4 z-10 bg-neutral-900/50 text-neutral-50 rounded-full w-8 h-8 flex items-center justify-center hover:bg-neutral-900/70 transition-colors"
           >
             ✕
           </button>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
             {/* Image Gallery */}
-            <div className="relative bg-gray-100">
+            <div className="relative bg-neutral-100">
               {allImages.length > 0 ? (
                 <>
                   <img
@@ -84,10 +83,10 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
                   
                   {allImages.length > 1 && (
                     <>
-                      {/* Previous Button */}
+                      {/* Previous ve Next butonları */}
                       <button
                         onClick={prevImage}
-                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-70 transition-colors"
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-neutral-900/50 text-neutral-50 rounded-full w-10 h-10 flex items-center justify-center hover:bg-neutral-900/70 transition-colors"
                       >
                         ‹
                       </button>
@@ -95,20 +94,20 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
                       {/* Next Button */}
                       <button
                         onClick={nextImage}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-70 transition-colors"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-neutral-900/50 text-neutral-50 rounded-full w-10 h-10 flex items-center justify-center hover:bg-neutral-900/70 transition-colors"
                       >
                         ›
                       </button>
                       
                       {/* Image Counter */}
-                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-neutral-900/50 text-neutral-50 px-3 py-1 rounded-full text-sm">
                         {currentImageIndex + 1} / {allImages.length}
                       </div>
                     </>
                   )}
                 </>
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400 text-6xl">
+                <div className="w-full h-full flex items-center justify-center bg-neutral-200 text-neutral-400 text-6xl">
                   🎨
                 </div>
               )}
@@ -118,13 +117,13 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
             <div className="p-6 overflow-y-auto" style={{ maxHeight: '60vh' }}>
               <div className="space-y-4">
                 {/* Title */}
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold text-neutral-900">
                   {exhibition.title}
                 </h2>
 
                 {/* Date */}
-                <div className="flex items-center space-x-2 text-gray-600">
-                  <span className="text-lg">📅</span>
+                <div className="flex items-center space-x-2 text-neutral-800">
+                  <span className="text-lg text-neutral-500">📅</span>
                   <span className="font-medium">
                     {formatDate(exhibition.startDate)} - {formatDate(exhibition.endDate)}
                   </span>
@@ -132,23 +131,23 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
 
                 {/* Location */}
                 {exhibition.location && (
-                  <div className="flex items-center space-x-2 text-gray-600">
-                    <span className="text-lg">📍</span>
+                  <div className="flex items-center space-x-2 text-neutral-800">
+                    <span className="text-lg text-neutral-500">📍</span>
                     <span>{exhibition.location}</span>
                   </div>
                 )}
 
                 {/* Gallery */}
                 {exhibition.galleryName && (
-                  <div className="flex items-center space-x-2 text-gray-600">
-                    <span className="text-lg">🏛️</span>
+                  <div className="flex items-center space-x-2 text-neutral-800">
+                    <span className="text-lg text-neutral-500">🏛️</span>
                     <div>
                       {exhibition.galleryUrl ? (
                         <a
                           href={exhibition.galleryUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                          className="text-primary-600 hover:text-primary-800 hover:underline"
                         >
                           {exhibition.galleryName}
                         </a>
@@ -159,7 +158,7 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
                   </div>
                 )}
 
-                {/* Status */}
+                {/* Status Tag */}
                 <div className="inline-block">
                   {(() => {
                     const now = new Date();
@@ -194,9 +193,9 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
 
                 {/* Description */}
                 {exhibition.description && (
-                  <div className="border-t pt-4">
-                    <h3 className="font-semibold text-gray-900 mb-2">Sergi Hakkında</h3>
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                  <div className="border-t border-neutral-200 pt-4">
+                    <h3 className="font-semibold text-neutral-900 mb-2">Sergi Hakkında</h3>
+                    <p className="text-neutral-700 leading-relaxed whitespace-pre-line">
                       {exhibition.description}
                     </p>
                   </div>
@@ -204,8 +203,8 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
 
                 {/* Image Thumbnails */}
                 {allImages.length > 1 && (
-                  <div className="border-t pt-4">
-                    <h3 className="font-semibold text-gray-900 mb-2">Galeri ({allImages.length})</h3>
+                  <div className="border-t border-neutral-200 pt-4">
+                    <h3 className="font-semibold text-neutral-900 mb-2">Galeri ({allImages.length})</h3>
                     <div className="grid grid-cols-4 gap-2">
                       {allImages.map((image, index) => (
                         <button
@@ -213,8 +212,8 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
                           onClick={() => setCurrentImageIndex(index)}
                           className={`aspect-square rounded overflow-hidden border-2 transition-colors ${
                             currentImageIndex === index
-                              ? "border-blue-500"
-                              : "border-gray-200 hover:border-gray-300"
+                              ? "border-primary-500" 
+                              : "border-neutral-200 hover:border-neutral-300" 
                           }`}
                         >
                           <img
