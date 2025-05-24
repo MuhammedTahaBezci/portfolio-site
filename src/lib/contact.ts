@@ -22,43 +22,19 @@ export async function sendContactMessage(
   subject?: string
 ): Promise<boolean> {
   try {
-    console.log('sendContactMessage başlıyor:', { name, email, message, subject });
-    
-    // Firebase bağlantısını kontrol et
-    if (!db) {
-      console.error('Firebase db bağlantısı yok!');
-      return false;
-    }
-
-    // Veri hazırlama
-    const messageData = {
-      name: name || '',
-      email: email || '',
+    await addDoc(collection(db, 'contactMessages'), {
+      name,
+      email,
       subject: subject || '',
-      message: message || '',
+      message,
       isRead: false,
       isArchived: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    };
-
-    console.log('Firebase\'e gönderilecek veri:', messageData);
-
-    // Firestore'a kaydet
-    const docRef = await addDoc(collection(db, 'contactMessages'), messageData);
-    
-    console.log('Doküman başarıyla eklendi, ID:', docRef.id);
+    });
     return true;
-    
   } catch (error) {
-    console.error('sendContactMessage hatası:', error);
-    
-    // Hata detaylarını logla
-    if (error instanceof Error) {
-      console.error('Hata mesajı:', error.message);
-      console.error('Hata stack:', error.stack);
-    }
-    
+    console.error('Mesaj gönderilemedi:', error);
     return false;
   }
 }
@@ -66,8 +42,6 @@ export async function sendContactMessage(
 // Tüm mesajları getir (admin için)
 export async function getContactMessages(includeArchived: boolean = false): Promise<ContactMessage[]> {
   try {
-    console.log('getContactMessages başlıyor, includeArchived:', includeArchived);
-    
     let q = query(
       collection(db, 'contactMessages'),
       orderBy('createdAt', 'desc')
@@ -99,7 +73,6 @@ export async function getContactMessages(includeArchived: boolean = false): Prom
       });
     });
 
-    console.log('Toplam mesaj sayısı:', messages.length);
     return messages;
   } catch (error) {
     console.error('Mesajlar getirilemedi:', error);
@@ -115,7 +88,6 @@ export async function markMessageAsRead(messageId: string): Promise<boolean> {
       isRead: true,
       updatedAt: serverTimestamp()
     });
-    console.log('Mesaj okundu olarak işaretlendi:', messageId);
     return true;
   } catch (error) {
     console.error('Mesaj güncellenemedi:', error);
@@ -131,7 +103,6 @@ export async function archiveMessage(messageId: string): Promise<boolean> {
       isArchived: true,
       updatedAt: serverTimestamp()
     });
-    console.log('Mesaj arşivlendi:', messageId);
     return true;
   } catch (error) {
     console.error('Mesaj arşivlenemedi:', error);
@@ -143,7 +114,6 @@ export async function archiveMessage(messageId: string): Promise<boolean> {
 export async function deleteMessage(messageId: string): Promise<boolean> {
   try {
     await deleteDoc(doc(db, 'contactMessages', messageId));
-    console.log('Mesaj silindi:', messageId);
     return true;
   } catch (error) {
     console.error('Mesaj silinemedi:', error);
@@ -160,9 +130,7 @@ export async function getUnreadMessageCount(): Promise<number> {
       where('isArchived', '==', false)
     );
     const querySnapshot = await getDocs(q);
-    const count = querySnapshot.size;
-    console.log('Okunmamış mesaj sayısı:', count);
-    return count;
+    return querySnapshot.size;
   } catch (error) {
     console.error('Okunmamış mesaj sayısı getirilemedi:', error);
     return 0;

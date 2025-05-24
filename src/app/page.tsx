@@ -9,18 +9,20 @@ export default async function Home() {
   const latestPaintings = await getPaintings();
   const featuredPaintings = latestPaintings.slice(0, 3); // İlk 3 eseri göster
   
-  const upcomingExhibitions = await getExhibitions();
-  const featuredExhibition = upcomingExhibitions[0]; // İlk sergiyi göster
+  const allExhibitions = await getExhibitions();
+  // getExhibitions artık sıralı geliyor, en öncelikli sergiyi al
+  const featuredExhibition = allExhibitions[0]; 
   
-  const latestBlogPosts = await getBlogPosts();
-  const featuredBlogPosts = latestBlogPosts.slice(0,1);
+  const allBlogPosts = await getBlogPosts();
+  // getBlogPosts artık sıralı geliyor, en yeni yazıyı al
+  const featuredBlogPosts = allBlogPosts.slice(0, 1); 
   
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Hero Bölümü */}
       <section className="relative h-96 rounded-lg overflow-hidden mb-16">
         <Image
-          src="/images/hero-image.jpg" // Burada kendi resim URL'nizi kullanın 
+          src="/images/hero-image.jpg"
           alt="Sanat Portfolyom"
           fill
           className="object-cover"
@@ -59,7 +61,7 @@ export default async function Home() {
             <div className="p-6 md:p-8 flex flex-col justify-center">
               <div className="mb-4">
                 <span className="inline-block px-3 py-1 bg-primary-100 text-primary-800 text-sm font-medium rounded-full">
-                  Güncel Sergi
+                  {new Date(featuredExhibition.endDate) >= new Date() ? 'Güncel Sergi' : 'Son Sergi'}
                 </span>
               </div>
               <h2 className="text-2xl font-bold mb-4">{featuredExhibition.title}</h2>
@@ -93,24 +95,26 @@ export default async function Home() {
       {/* Son Blog Yazıları */}
       <section className="mb-16">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold">Son Blog Yazıları</h2>
+          <h2 className="text-2xl md:text-3xl font-bold">Son Blog Yazısı</h2>
           <Link 
-            href="/blog" 
-            className="text-primary-600 hover:text-primary-700 font-medium flex items-center"
-          >
-            Tümünü Gör
-            <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-          </Link>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {featuredBlogPosts.map((post) => (
-            <BlogPostCard key={post.id} post={post} />
-          ))}
-        </div>
-      </section>
+          href="/blog" 
+          className="text-primary-600 hover:text-primary-700 font-medium flex items-center"
+        >
+          Tümünü Gör
+        <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </Link>
+    </div>
+
+      {/* Bu div'i flex column yap ve grid'i kaldır */}
+      <div className="flex flex-col gap-10">
+        {featuredBlogPosts.map((post) => (
+          <BlogPostCard key={post.id} post={post} />
+        ))}
+      </div>
+    </section>
+
       
       {/* İletişim CTA */}
       <section className="bg-primary-100 rounded-lg p-8 text-center">

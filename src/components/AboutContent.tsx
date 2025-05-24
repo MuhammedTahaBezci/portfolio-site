@@ -81,7 +81,6 @@ export default function AboutContent({ aboutData }: AboutContentProps) {
         </div>
       </div>
 
-
       <div className="bg-background rounded-lg shadow-md p-6 mb-10 border border-neutral-200"> 
         <h2 className="text-xl font-bold mb-4 text-neutral-900">Sanat Felsefem</h2> 
         <div
@@ -90,19 +89,19 @@ export default function AboutContent({ aboutData }: AboutContentProps) {
         />
       </div>
 
-      {/* İletişim CTA */}
-      <div className="bg-primary-100 rounded-lg p-8 text-center border border-primary-200"> 
-        <h2 className="text-2xl font-bold mb-4 text-primary-800">{aboutData.contactMessage}</h2> 
-        <p className="text-primary-700 mb-6 max-w-2xl mx-auto"> 
-          Sergiler, sanatsal projeler veya özel siparişler için benimle iletişime geçebilirsiniz.
+      {/* İletişim CTA - Değiştirilmiş Bölüm */}
+      <section className="bg-primary-100 rounded-lg p-8 text-center border border-primary-200"> 
+        <h2 className="text-2xl font-bold mb-4">Eserlerim Hakkında Bilgi Almak İster misiniz?</h2>
+        <p className="text-neutral-700 mb-6 max-w-2xl mx-auto">
+          Eserlerim, sergi iş birlikleri veya satın alma hakkında detaylı bilgi için benimle iletişime geçebilirsiniz.
         </p>
-        <Link
-          href="/contact"
-          className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-6 rounded-md transition duration-300 shadow-md hover:shadow-lg" 
+        <Link 
+          href="/contact" 
+          className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-6 rounded-md transition duration-300"
         >
-          {aboutData.contactButtonText}
+          İletişime Geç
         </Link>
-      </div>
+      </section>
     </div>
   );
 }

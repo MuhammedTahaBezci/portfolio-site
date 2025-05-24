@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where, Query, DocumentData, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, Query, DocumentData, doc, getDoc, orderBy } from 'firebase/firestore';
 import { db, storage } from './firebase';
 import { BlogPost } from '@/types/blog';
 import { Exhibition } from '@/types/exhibition';
@@ -76,7 +76,7 @@ export async function getCategoryBySlug(slug: string) {
   }
 }
 
-// Sergileri getir
+// Sergileri getir - tarih sıralamasıyla
 export async function getExhibitions(): Promise<Exhibition[]> {
   try {
     const snapshot = await getDocs(collection(db, 'exhibitions'));
@@ -115,7 +115,21 @@ export async function getExhibitions(): Promise<Exhibition[]> {
       exhibitions.push(exhibition);
     }
     
-    return exhibitions;
+    // Şu anki tarih
+    const now = new Date();
+    
+    // Sergileri kategorilere ayır
+    const upcoming = exhibitions.filter(ex => new Date(ex.endDate) >= now);
+    const past = exhibitions.filter(ex => new Date(ex.endDate) < now);
+    
+    // Yaklaşan sergileri başlama tarihine göre sırala (en yakından uzağa) 
+    upcoming.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    
+    // Geçmiş sergileri başlama tarihine göre sırala (en yeni en önce)
+    past.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    
+    // Önce yaklaşan, sonra geçmiş sergiler
+    return [...upcoming, ...past];
   } catch (error) {
     console.error('Error fetching exhibitions:', error);
     return [];
@@ -164,11 +178,16 @@ export async function getExhibitionById(id: string): Promise<Exhibition | null> 
   }
 }
 
-// Blog yazılarını getir
+// Blog yazılarını getir - tarih sıralamasıyla  
 export async function getBlogPosts() {
   try {
     const snapshot = await getDocs(collection(db, 'blogPosts'));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost));
+    const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost));
+    
+    // Yayın tarihine göre sırala (en yeni en önce)
+    posts.sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
+    
+    return posts;
   } catch (error) {
     console.error('Error fetching blog posts:', error);
     return [];

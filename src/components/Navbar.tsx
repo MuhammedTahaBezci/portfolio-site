@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import Image from 'next/image'; // Image bileşenini kullanacağız
 import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
@@ -22,7 +22,6 @@ export default function Navbar() {
     { href: '/contact', label: 'İletişim' },
   ];
 
-
   const isActive = (path: string) => {
     return pathname === path ? 'text-primary-600' : 'text-neutral-600 hover:text-primary-600';
   };
@@ -33,6 +32,14 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
+              {/* Logo buraya eklendi */}
+              <Image
+                src="/images/logo1.png" // Logo dosyanızın yolu, public klasöründeyse doğrudan adı yazılır
+                alt="Muhammed Taha Bezci Logo"
+                width={32} // Logonuzun genişliği
+                height={32} // Logonuzun yüksekliği
+                className="mr-2 rounded-full" // Logoya biraz marj ve yuvarlaklık ekledik
+              />
               <span className="font-serif text-xl font-bold text-neutral-900">Muhammed Taha Bezci</span>
             </Link>
           </div>

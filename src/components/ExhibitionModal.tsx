@@ -1,8 +1,9 @@
 // src/components/ExhibitionModal.tsx
-"use client";
+"use client"; // Bu direktif, Next.js 14+ (App Router) için çok önemlidir, çünkü client-side Hook'lar kullanıyoruz.
 
 import { useEffect, useState } from "react";
 import { Exhibition } from "@/types/exhibition"; 
+// Eğer next/image kullanmak isterseniz: import Image from 'next/image';
 
 interface ExhibitionModalProps {
   exhibition: Exhibition;
@@ -12,13 +13,15 @@ interface ExhibitionModalProps {
 export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModalProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // Modal açıldığında body'nin scroll'unu kapat
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'unset'; // Modal kapandığında geri aç
     };
   }, []);
 
+  // Escape tuşu ile kapatma özelliği
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -29,6 +32,7 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
     return () => document.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
+  // Tarih formatlama fonksiyonu
   const formatDate = (date: string | number | Date) => {
     return new Intl.DateTimeFormat('tr-TR', {
       year: 'numeric',
@@ -37,69 +41,86 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
     }).format(new Date(date));
   };
 
+  // Tüm görselleri topla (ana görsel + ek görseller)
   const allImages = [
-    ...(exhibition.imageUrl ? [typeof exhibition.imageUrl === 'string' ? exhibition.imageUrl : exhibition.imageUrl] : []),
+    // exhibition.imageUrl bir string veya string dizisi olabilir, her iki durumu da ele alıyoruz.
+    ...(exhibition.imageUrl 
+        ? (Array.isArray(exhibition.imageUrl) 
+            ? exhibition.imageUrl 
+            : [exhibition.imageUrl]) 
+        : []),
     ...(exhibition.images || [])
-  ];
+  ].filter(Boolean); // undefined veya null değerleri filtrele
 
+  // Sonraki görsel
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
   };
 
+  // Önceki görsel
   const prevImage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
+      {/* Arka plan karartması */}
       <div 
         className="fixed inset-0 bg-neutral-900/75 transition-opacity"
-        onClick={onClose}
+        onClick={onClose} // Arka plana tıklayınca kapatma
       />
       
-      {/* Modal */}
+      {/* Modal Kutusu */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-background rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-          {/* Close Button */}
+        <div className="relative bg-background rounded-lg shadow-2xl 
+                        max-w-5xl w-full            {/* Yatayda maksimum 4xl genişlik (768px) */}
+                        max-h-[95vh]                {/* Dikeyde ekranın %95'ini kapla */}
+                        overflow-hidden">
+          
+          {/* Kapat Butonu */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 bg-neutral-900/50 text-neutral-50 rounded-full w-8 h-8 flex items-center justify-center hover:bg-neutral-900/70 transition-colors"
+            className="absolute top-4 right-4 z-10 bg-neutral-900/50 text-neutral-50 rounded-full 
+                       w-8 h-8 flex items-center justify-center hover:bg-neutral-900/70 transition-colors"
           >
             ✕
           </button>
 
+          {/* İçerik: Görsel ve Detaylar (Large ekranlarda 2 sütun) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
-            {/* Image Gallery */}
-            <div className="relative bg-neutral-100">
+            
+            {/* Görsel Galeri Bölümü */}
+            <div className="relative bg-neutral-100 flex items-center justify-center"> {/* Resmin dikeyde ortalanması için eklemeler */}
               {allImages.length > 0 ? (
                 <>
+                  {/* Ana Görsel */}
+                  {/* next/image yerine direkt img etiketi kullanıldı, ihtiyaca göre Image bileşenine çevrilebilir. */}
                   <img
                     src={allImages[currentImageIndex]}
                     alt={exhibition.title}
-                    className="w-full h-full object-cover"
-                    style={{ maxHeight: '60vh', minHeight: '300px' }}
+                    className="w-full h-auto object-contain" 
+                    style={{ maxHeight: '80vh' }} 
                   />
                   
                   {allImages.length > 1 && (
                     <>
-                      {/* Previous ve Next butonları */}
+                      {/* Önceki ve Sonraki Butonları */}
                       <button
                         onClick={prevImage}
-                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-neutral-900/50 text-neutral-50 rounded-full w-10 h-10 flex items-center justify-center hover:bg-neutral-900/70 transition-colors"
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-neutral-900/50 text-neutral-50 rounded-full 
+                                   w-10 h-10 flex items-center justify-center hover:bg-neutral-900/70 transition-colors"
                       >
                         ‹
                       </button>
-                      
-                      {/* Next Button */}
                       <button
                         onClick={nextImage}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-neutral-900/50 text-neutral-50 rounded-full w-10 h-10 flex items-center justify-center hover:bg-neutral-900/70 transition-colors"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-neutral-900/50 text-neutral-50 rounded-full 
+                                   w-10 h-10 flex items-center justify-center hover:bg-neutral-900/70 transition-colors"
                       >
                         ›
                       </button>
                       
-                      {/* Image Counter */}
+                      {/* Görsel Sayacı */}
                       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-neutral-900/50 text-neutral-50 px-3 py-1 rounded-full text-sm">
                         {currentImageIndex + 1} / {allImages.length}
                       </div>
@@ -107,21 +128,22 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
                   )}
                 </>
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-neutral-200 text-neutral-400 text-6xl">
-                  🎨
+                // Görsel yoksa gösterilecek yer tutucu
+                <div className="w-full h-full flex items-center justify-center bg-neutral-200 text-neutral-400 text-6xl min-h-[300px]">
+                  🎨 {/* min-h ekleyerek boş resim alanının da bir yüksekliği olmasını sağladık */}
                 </div>
               )}
             </div>
 
-            {/* Exhibition Details */}
-            <div className="p-6 overflow-y-auto" style={{ maxHeight: '60vh' }}>
+            {/* Sergi Detayları Bölümü */}
+            <div className="p-6 overflow-y-auto" style={{ maxHeight: '80vh' }}> {/* Detay bölümünün maksimum dikey yüksekliği */}
               <div className="space-y-4">
-                {/* Title */}
+                {/* Başlık */}
                 <h2 className="text-2xl font-bold text-neutral-900">
                   {exhibition.title}
                 </h2>
 
-                {/* Date */}
+                {/* Tarih */}
                 <div className="flex items-center space-x-2 text-neutral-800">
                   <span className="text-lg text-neutral-500">📅</span>
                   <span className="font-medium">
@@ -129,7 +151,7 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
                   </span>
                 </div>
 
-                {/* Location */}
+                {/* Konum */}
                 {exhibition.location && (
                   <div className="flex items-center space-x-2 text-neutral-800">
                     <span className="text-lg text-neutral-500">📍</span>
@@ -137,7 +159,7 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
                   </div>
                 )}
 
-                {/* Gallery */}
+                {/* Galeri Adı/Link */}
                 {exhibition.galleryName && (
                   <div className="flex items-center space-x-2 text-neutral-800">
                     <span className="text-lg text-neutral-500">🏛️</span>
@@ -158,17 +180,17 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
                   </div>
                 )}
 
-                {/* Status Tag */}
+                {/* Durum Etiketi */}
                 <div className="inline-block">
                   {(() => {
                     const now = new Date();
-                    now.setHours(0, 0, 0, 0);
-                    
+                    now.setHours(0, 0, 0, 0); // Saat bilgisi olmadan sadece tarih karşılaştırması için
+
                     const startDate = new Date(exhibition.startDate);
                     const endDate = new Date(exhibition.endDate);
-                    startDate.setHours(0, 0, 0, 0);
-                    endDate.setHours(23, 59, 59, 999);
-                    
+                    startDate.setHours(0, 0, 0, 0); // Başlangıç gününün başlangıcı
+                    endDate.setHours(23, 59, 59, 999); // Bitiş gününün sonu
+
                     if (startDate > now) {
                       return (
                         <span className="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800">
@@ -191,7 +213,7 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
                   })()}
                 </div>
 
-                {/* Description */}
+                {/* Açıklama */}
                 {exhibition.description && (
                   <div className="border-t border-neutral-200 pt-4">
                     <h3 className="font-semibold text-neutral-900 mb-2">Sergi Hakkında</h3>
@@ -201,7 +223,7 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
                   </div>
                 )}
 
-                {/* Image Thumbnails */}
+                {/* Görsel Küçük Resimleri (Thumbnail) */}
                 {allImages.length > 1 && (
                   <div className="border-t border-neutral-200 pt-4">
                     <h3 className="font-semibold text-neutral-900 mb-2">Galeri ({allImages.length})</h3>

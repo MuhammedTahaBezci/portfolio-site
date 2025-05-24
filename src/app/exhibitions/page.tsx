@@ -3,7 +3,7 @@ import ExhibitionList from "@/components/ExhibitionList";
 import { Exhibition } from "@/types/exhibition";
 
 export const metadata = {
-  title: "Sergiler | Sanat Portfolyom",
+  title: "Sergiler | Sanat portfolyom",
   description: "Geçmiş ve gelecek sergilerim hakkında bilgiler",
 };
 

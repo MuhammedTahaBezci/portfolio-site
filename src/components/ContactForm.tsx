@@ -19,8 +19,12 @@ const Button = ({
     <button
       type={type}
       disabled={disabled}
-      className={`px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition duration-300 font-medium
-        ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+      className={`
+        px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold tracking-wide 
+        hover:bg-primary-700 transition duration-300 ease-in-out 
+        focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+        ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}
+      `}
       {...props}
     >
       {children}
@@ -34,7 +38,7 @@ const Card = ({
   className = "",
 }: React.PropsWithChildren<{ className?: string }>) => {
   return (
-    <div className={`bg-background shadow-lg rounded-lg p-6 ${className}`}>
+    <div className={`bg-white shadow-xl rounded-xl p-8 md:p-10 border border-neutral-100 ${className}`}>
       {children}
     </div>
   );
@@ -52,18 +56,19 @@ export default function ContactForm() {
     e.preventDefault();
     
     if (!name.trim() || !email.trim() || !message.trim()) {
+      // Daha iyi bir hata mesajı veya görsel geri bildirim eklenebilir
+      alert('Lütfen gerekli tüm alanları doldurun.');
       return;
     }
     
     setIsSubmitting(true);
-    setSubmitStatus('idle'); // Yeni gönderimde durumu sıfırla
+    setSubmitStatus('idle'); 
     
     try {
       const success = await sendContactMessage(name.trim(), email.trim(), message.trim(), subject.trim());
       
       if (success) {
         setSubmitStatus('success');
-        // Form alanlarını temizle
         setName('');
         setEmail('');
         setSubject('');
@@ -72,6 +77,7 @@ export default function ContactForm() {
         setSubmitStatus('error');
       }
       
+      // Başarı/Hata mesajını 5 saniye sonra gizle
       setTimeout(() => {
         setSubmitStatus('idle');
       }, 5000);
@@ -88,41 +94,37 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="w-full max-w-2xl">
+    <div className="w-full max-w-2xl mx-auto py-10 px-4"> {/* Merkezi konumlandırma ve dolgu */}
       <Card>
-        <h2 className="text-3xl font-bold text-neutral-900 mb-2 text-center">İletişim</h2>
-        <p className="text-neutral-600 text-center mb-8">
-          Sorularınız, projeleriniz ve iş birliği teklifleriniz için bana ulaşın.
+        <h2 className="text-4xl font-extrabold text-neutral-900 mb-4 text-center">Bize Ulaşın</h2>
+        <p className="text-neutral-500 text-center mb-10 text-lg">
+          Sorularınız, projeleriniz ve iş birliği teklifleriniz için bizimle iletişime geçin.
         </p>
 
         {submitStatus === 'success' && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium">Mesajınız başarıyla gönderildi!</p>
-                <p className="text-sm mt-1">En kısa sürede size geri dönüş yapacağım.</p>
-              </div>
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-start">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium">Mesajınız başarıyla gönderildi!</p>
+              <p className="text-sm mt-1 opacity-90">En kısa sürede size geri dönüş yapacağız.</p>
             </div>
           </div>
         )}
 
         {submitStatus === 'error' && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium">Mesajınız gönderilemedi!</p>
-                <p className="text-sm mt-1">Lütfen daha sonra tekrar deneyiniz veya direkt e-posta ile iletişime geçiniz.</p>
-              </div>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-start">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium">Mesajınız gönderilemedi!</p>
+              <p className="text-sm mt-1 opacity-90">Lütfen daha sonra tekrar deneyin veya doğrudan e-posta ile iletişime geçin.</p>
             </div>
           </div>
         )}
@@ -138,7 +140,9 @@ export default function ContactForm() {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition duration-200"
+                className="w-full px-4 py-3 border border-neutral-300 rounded-lg 
+                           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+                           transition duration-200 placeholder-neutral-400 text-neutral-800"
                 placeholder="Adınızı ve soyadınızı girin"
                 required
               />
@@ -153,7 +157,9 @@ export default function ContactForm() {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition duration-200"
+                className="w-full px-4 py-3 border border-neutral-300 rounded-lg 
+                           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+                           transition duration-200 placeholder-neutral-400 text-neutral-800"
                 placeholder="E-posta adresinizi girin"
                 required
               />
@@ -169,7 +175,9 @@ export default function ContactForm() {
               id="subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition duration-200"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg 
+                         focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+                         transition duration-200 placeholder-neutral-400 text-neutral-800"
               placeholder="Mesajınızın konusu (isteğe bağlı)"
             />
           </div>
@@ -183,7 +191,9 @@ export default function ContactForm() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={6}
-              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition duration-200 resize-vertical"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg 
+                         focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+                         transition duration-200 resize-y placeholder-neutral-400 text-neutral-800"
               placeholder="Mesajınızı buraya yazın..."
               required
             ></textarea>
