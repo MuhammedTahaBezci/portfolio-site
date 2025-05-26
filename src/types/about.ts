@@ -1,5 +1,4 @@
-// types/about.ts - Ana tip tanımlamaları
-import { FieldValue } from 'firebase/firestore';
+import { FieldValue, Timestamp } from 'firebase/firestore';
 
 export interface EducationItem {
   id: string;
@@ -11,7 +10,7 @@ export interface EducationItem {
 }
 
 export interface AboutData {
-  id: string; // Burayı string olarak değiştirdik (optional kaldırdık)
+  id: string;
   title: string;
   description: string;
   artistName: string;
@@ -41,6 +40,6 @@ export interface AboutDataFromFirestore {
   skills?: string[];
   contactMessage?: string;
   contactButtonText?: string;
-  createdAt?: any; // Firestore timestamp
-  updatedAt?: any; // Firestore timestamp
+  createdAt?: Timestamp; 
+  updatedAt?: Timestamp; 
 }

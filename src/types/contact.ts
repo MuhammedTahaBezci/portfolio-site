@@ -1,4 +1,5 @@
-// types/contact.ts - Mesaj tipleri
+import { Timestamp } from 'firebase/firestore';
+
 export interface ContactMessage {
   id: string;
   name: string;
@@ -19,6 +20,6 @@ export interface ContactMessageFromFirestore {
   message?: string;
   isRead?: boolean;
   isArchived?: boolean;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: Timestamp; 
+  updatedAt?: Timestamp; 
 }

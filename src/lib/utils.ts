@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where, Query, DocumentData, doc, getDoc, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, Query, DocumentData, doc, getDoc } from 'firebase/firestore';
 import { db, storage } from './firebase';
 import { BlogPost } from '@/types/blog';
 import { Exhibition } from '@/types/exhibition';
