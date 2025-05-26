@@ -1,96 +1,80 @@
-// contexts/AuthContext.tsx
-"use client"; // Bu satır, Next.js'te bu dosyanın istemci tarafında çalışacağını belirtir.
+// context/AuthContext.tsx
+'use client'; // Bu bir istemci (client) bileşeni olmalı
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User } from 'firebase/auth'; // Firebase User tipini içe aktarıyoruz
-import { onAuthStateChange, isAdmin } from '@/lib/auth'; // auth.ts dosyasından fonksiyonları içe aktarıyoruz
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { onAuthStateChanged, User, signOut as firebaseSignOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase'; // Firebase yapılandırmanızın yolunu kontrol edin
+import { useRouter, usePathname } from 'next/navigation'; // Next.js 13+ App Router için gerekli
 
-// AuthContext'in sağlayacağı veri yapısını tanımlıyoruz
 interface AuthContextType {
-  user: User | null;         // Firebase'den gelen kullanıcı objesi veya null
-  isAuthenticated: boolean;  // Kullanıcının giriş yapıp yapmadığı (true/false)
-  isAdminUser: boolean;      // Kullanıcının yönetici olup olmadığı (true/false)
-  loading: boolean;          // Kimlik doğrulama durumunun yüklenip yüklenmediği (true/false)
+  user: User | null; // Giriş yapmış kullanıcı bilgisi
+  loading: boolean; // Kimlik doğrulama durumunun yüklenip yüklenmediği
+  logout: () => Promise<void>; // Çıkış yapma fonksiyonu
+  isAdmin: boolean; // Kullanıcının yönetici olup olmadığı
 }
 
-// AuthContext'i varsayılan değerlerle oluşturuyoruz
-// Başlangıçta loading true, diğerleri false olarak ayarlanır
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  isAuthenticated: false,
-  isAdminUser: false,
-  loading: true,
-});
+// Bağlamı oluşturuyoruz
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// AuthProvider bileşeni, uygulamanın tamamına kimlik doğrulama bağlamını sağlar
-export function AuthProvider({ children }: { children: ReactNode }) {
-  // Kullanıcı objesi için state
+// Bağlam sağlayıcısı (Provider) bileşeni
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  // Yüklenme durumu için state
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter(); // Yönlendirme için
+  const pathname = usePathname(); // Mevcut sayfa yolunu almak için
 
-  // Bu useEffect, bileşen yüklendiğinde Firebase kimlik doğrulama durumunu dinler
-  // ve durum her değiştiğinde (giriş/çıkış) tetiklenir.
+  // Ortam değişkeninden yönetici e-postalarını alıyoruz
+  const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(email => email.trim()) || [];
+
   useEffect(() => {
-    // Dinleyici başlatıldığında bir log
-    console.log('[AuthContext] onAuthStateChange dinleyicisi başlatılıyor...');
+    // Firebase'in oturum açma durumu değiştiğinde çalışacak listener
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser); // Kullanıcıyı set et
+      if (currentUser && currentUser.email) {
+        setIsAdmin(adminEmails.includes(currentUser.email)); // E-postası yönetici listesinde mi kontrol et
+      } else {
+        setIsAdmin(false);
+      }
+      setLoading(false); // Yükleme bitti
 
-    // Firebase'in onAuthStateChanged fonksiyonunu dinleyici olarak kullanıyoruz
-    const unsubscribe = onAuthStateChange({
-      callback: (firebaseUser) => {
-        // Dinleyici tetiklendiğinde her zaman bu logu görmelisiniz
-        console.log('[AuthContext] onAuthStateChange tetiklendi!');
-
-        if (firebaseUser) {
-          // Eğer bir kullanıcı varsa (giriş yapmışsa)
-          console.log('[AuthContext] Gelen user (giriş yapmış):', firebaseUser.email);
-          // Kullanıcının admin olup olmadığını kontrol edip logluyoruz
-          console.log('[AuthContext] isAdmin(user) sonucu:', isAdmin(firebaseUser));
-        } else {
-          // Eğer kullanıcı yoksa (giriş yapmamışsa veya çıkış yapmışsa)
-          console.log('[AuthContext] Gelen user (giriş yapmamış): null');
+      // Admin yolları için yönlendirme mantığı
+      if (!loading) { // Yükleme durumu çözüldükten sonra yönlendirme yap
+        if (pathname.startsWith('/admin')) { // Eğer mevcut yol /admin ile başlıyorsa
+          if (!currentUser) { // Kullanıcı giriş yapmamışsa
+            router.push('/admin/login'); // Giriş sayfasına yönlendir
+          } else if (currentUser && currentUser.email && !adminEmails.includes(currentUser.email)) {
+            // Kullanıcı giriş yapmış ama yönetici değilse
+            await firebaseSignOut(auth); // Oturumunu kapat
+            router.push('/admin/login?error=unauthorized'); // Yetkisiz hatasıyla giriş sayfasına yönlendir
+          }
         }
-
-        // Kullanıcı state'ini güncelliyoruz
-        setUser(firebaseUser);
-        // Yüklenme durumunu false yapıyoruz, çünkü durumu kontrol ettik
-        setLoading(false);
-
-        // Auth durumunun güncellenmiş halini logluyoruz
-        console.log('[AuthContext] Auth durumu güncellendi: loading:', false, 'isAuthenticated:', !!firebaseUser, 'isAdminUser:', isAdmin(firebaseUser));
       }
     });
 
-    // useEffect'ten çıkıldığında (bileşen kaldırıldığında) dinleyiciyi temizle
-    // Bu, bellek sızıntılarını önler ve gereksiz dinlemeyi durdurur.
-    return () => {
-      console.log('[AuthContext] onAuthStateChange dinleyicisi temizleniyor.');
-      unsubscribe(); // Firebase dinleyicisini kapatıyoruz
-    };
-  }, []); // Boş bağımlılık dizisi, useEffect'in yalnızca bir kez, bileşen yüklendiğinde çalışmasını sağlar.
+    return () => unsubscribe(); // Bileşen ayrıldığında listener'ı temizle
+  }, [router, pathname, loading, adminEmails]); // Bağımlılıklar
 
-  // AuthContext'e sağlanacak değerleri oluşturuyoruz
-  const value = {
-    user,
-    isAuthenticated: !!user, // user null değilse true, null ise false
-    isAdminUser: isAdmin(user), // isAdmin fonksiyonuyla yönetici olup olmadığını kontrol et
-    loading,
+  // Çıkış yapma fonksiyonu
+  const logout = async () => {
+    await firebaseSignOut(auth); // Firebase'den çıkış yap
+    setUser(null);
+    setIsAdmin(false);
+    router.push('/admin/login'); // Giriş sayfasına yönlendir
   };
 
-  // AuthContext.Provider ile tüm alt bileşenlere 'value' değerini sağlıyoruz
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, loading, logout, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-// useAuth hook'u, AuthContext'i diğer bileşenlerde kolayca kullanmak için
+// Bağlamı kolayca kullanmak için custom hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  // Eğer hook AuthProvider dışında kullanılırsa hata fırlatırız
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth, bir AuthProvider içinde kullanılmalıdır');
   }
-  return context; // Context değerini döndürürüz
+  return context;
 };

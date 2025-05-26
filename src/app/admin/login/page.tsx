@@ -1,182 +1,129 @@
 // app/admin/login/page.tsx
-"use client";
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { signInAdmin } from '@/lib/auth';
-import { useAuth } from '@/contexts/AuthContext';
-import { useEffect } from 'react';
+'use client';
 
-export default function AdminLogin() {
+import { useState, FormEvent, useEffect } from 'react';
+import { signInWithEmailAndPassword } from 'firebase/auth'; // Giriş yapmak için gerekli fonksiyon
+import { auth } from '@/lib/firebase'; // Firebase auth objesi
+import { useRouter, useSearchParams } from 'next/navigation'; // Yönlendirme ve URL parametreleri için
+import { useAuth } from '@/contexts/AuthContext'; // AuthContext'ten bilgileri almak için
+
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // Bu satırı ekledim
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { isAuthenticated, isAdminUser, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams(); // URL'deki query parametrelerini almak için (örneğin ?error=unauthorized)
+  const authContext = useAuth(); // AuthContext'i kullanıyoruz
 
-  // Eğer zaten giriş yapılmışsa dashboard'a yönlendir
   useEffect(() => {
-    if (!authLoading && isAuthenticated && isAdminUser) {
+    // Eğer kullanıcı zaten giriş yapmış ve YÖNETİCİ ise, admin paneline yönlendir
+    if (!authContext.loading && authContext.user && authContext.isAdmin) {
       router.push('/admin');
     }
-  }, [isAuthenticated, isAdminUser, authLoading, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!email.trim() || !password.trim()) {
-      setError('E-posta ve parola alanları boş bırakılamaz');
-      return;
+    // URL'de bir hata parametresi varsa göster
+    const authError = searchParams.get('error');
+    if (authError === 'unauthorized') {
+      setError('Erişim yetkiniz yok. Lütfen doğru hesapla giriş yapın.');
     }
+  }, [authContext.loading, authContext.user, authContext.isAdmin, router, searchParams]);
 
-    setLoading(true);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault(); // Sayfanın yenilenmesini engelle
     setError('');
+    setLoading(true);
 
     try {
-      const loggedInUser =await signInAdmin(email.trim(), password);
-      console.log('[AdminLogin] signInAdmin BAŞARILI. Dönülen kullanıcı:', loggedInUser.email);
-      // Başarılı giriş sonrası yönlendirme useEffect'te yapılacak
-    } catch (error: any) {
-       console.error('[AdminLogin] signInAdmin HATASI:', error.message);
-      setError(error.message || 'Giriş yapılamadı');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Ortam değişkeninden yönetici e-postalarını al
+      const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(email => email.trim()) || [];
+
+      if (user.email && adminEmails.includes(user.email)) {
+        // Başarılı giriş ve yetkili bir yönetici e-postası ise
+        router.push('/admin'); // Admin paneline yönlendir
+      } else {
+        // Kullanıcı giriş yaptı ama e-postası yönetici listesinde değil
+        await auth.signOut(); // Hemen oturumunu kapat
+        setError('Bu hesap yönetici paneline erişim yetkisine sahip değil.');
+      }
+    } catch (err: any) {
+      console.error('Giriş hatası:', err.code, err.message);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('E-posta veya şifre yanlış.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Geçersiz e-posta formatı.');
+      } else {
+        setError('Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyin.');
+      }
     } finally {
-      setLoading(false);
+      setLoading(false); // Yükleme durumunu kapat
     }
   };
 
-  if (authLoading) {
+  // AuthContext yüklenirken veya kullanıcı zaten admin ise boş/yükleniyor göster
+  if (authContext.loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Yükleniyor...</p>
-        </div>
+      <div className="flex justify-center items-center h-screen">
+        <p>Yükleniyor...</p>
       </div>
     );
   }
 
+  // Kullanıcı giriş yapmış ve yönetici ise, bu sayfa görünmemeli, yönlendirme zaten yapılacak
+  if (authContext.user && authContext.isAdmin) {
+    return null; // Yönlendirme gerçekleşene kadar boş göster
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
-            <svg
-              className="h-6 w-6 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Admin Girişi
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Yönetici paneline erişmek için giriş yapın
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Yönetici Girişi</h1>
+        {error && ( // Hata varsa göster
+          <p className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <strong className="font-bold">Hata!</strong>
+            <span className="block sm:inline"> {error}</span>
           </p>
-        </div>
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                E-posta Adresi
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm transition-colors"
-                placeholder="admin@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Parola
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  className="appearance-none rounded-md relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm transition-colors"
-                  placeholder="Parolanızı girin"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={loading}
-                >
-                  {showPassword ? (
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  ) : (
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {error && (
-            <div className="rounded-md bg-red-50 p-4 border-l-4 border-red-400">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-            >
-              {loading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Giriş yapılıyor...
-                </div>
-              ) : (
-                <>
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                  </svg>
-                  Giriş Yap
-                </>
-              )}
-            </button>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              E-posta
+            </label>
+            <input
+              type="email"
+              id="email"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="username"
+            />
           </div>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Şifre
+            </label>
+            <input
+              type="password"
+              id="password"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            disabled={loading} // Yükleniyorken butonu pasif yap
+          >
+            {loading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
+          </button>
         </form>
       </div>
     </div>

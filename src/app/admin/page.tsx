@@ -1,45 +1,52 @@
-// app/admin/page.tsx
-"use client";
-import { useAuth } from '@/contexts/AuthContext';
+// admin/page.tsx
+'use client'; // Bu bir istemci bileşeni olmalı
+
+import Sidebar from "@/components/Sidebar";
+import { useAuth } from '@/contexts/AuthContext'; // AuthContext'i import et
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function AdminDashboard() {
-  const { isAuthenticated, isAdminUser, loading: authLoading } = useAuth();
+  const { user, loading, isAdmin, logout } = useAuth(); // AuthContext'ten bilgileri al
   const router = useRouter();
 
+  // Bu useEffect, kullanıcının yönetici olduğundan emin olmak içindir.
+  // AuthProvider zaten ilk yönlendirmeleri yapıyor, bu ek bir güvenlik katmanı.
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || !isAdminUser)) {
-      router.push('/admin/login');
+    if (!loading) { // Yükleme bittiğinde
+      if (!user) { // Kullanıcı giriş yapmamışsa
+        router.push('/admin/login'); // Giriş sayfasına yönlendir
+      } else if (!isAdmin) {
+        // Kullanıcı giriş yapmış ama yönetici değilse (e-postası beyaz listede yoksa)
+        logout(); // Oturumunu kapatmaya zorla
+        router.push('/admin/login?error=unauthorized'); // Yetkisiz hatasıyla giriş sayfasına yönlendir
+      }
     }
-  }, [isAuthenticated, isAdminUser, authLoading, router]);
+  }, [user, loading, isAdmin, router, logout]); // Bağımlılıklar
 
-  if (authLoading) {
+  // Yükleme sırasında veya yetkisiz kullanıcılar için bir yükleniyor/boş ekranı göster
+  if (loading || (!user && !loading) || (!isAdmin && user)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Yükleniyor...</p>
-        </div>
+      <div className="flex justify-center items-center h-screen">
+        <p>Yükleniyor...</p>
       </div>
     );
   }
 
-  if (!isAuthenticated || !isAdminUser) {
-    return null; // Redirecting, so nothing to render here
-  }
-
+  // Sadece kullanıcı kimliği doğrulanmış ve yönetici ise paneli render et
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full mx-auto text-center">
-        <h2 className="text-3xl font-extrabold text-gray-900">
-          Admin Paneline Hoş Geldiniz!
-        </h2>
-        <p className="mt-2 text-sm text-gray-600">
-          Burada yönetici araçlarına erişebilirsiniz.
-        </p>
+    <div className="flex">
+      <Sidebar />
+      <div className="flex-1 p-6">
+        <h1 className="text-2xl font-bold">Yönetici Paneli</h1>
+        <p>Hoş geldiniz! Sol menüden işlemlerinizi seçebilirsiniz.</p>
+        <button
+          onClick={logout} // Çıkış yap butonu
+          className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+        >
+          Çıkış Yap
+        </button>
       </div>
-      {/* Diğer admin paneli bileşenleri buraya eklenebilir */}
     </div>
   );
 }
