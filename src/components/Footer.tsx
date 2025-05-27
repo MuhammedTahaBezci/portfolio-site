@@ -17,7 +17,7 @@ export default function Footer() {
                 height={45}
                 className="mr-2 rounded-b-none" // BU SATIR LOGOYU YUVARLAK YAPIYOR
               />
-              <span className="font-serif text-xl font-bold text-neutral-50">Muhammed Taha Bezci</span>
+              <span className="font-serif text-xl font-bold text-neutral-50">Veysel Saydut</span>
             </Link>
             <p className="text-neutral-300 text-sm">
               Sanat eserlerim ve çalışmalarım hakkında güncel bilgiler için

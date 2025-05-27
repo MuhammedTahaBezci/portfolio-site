@@ -40,7 +40,7 @@ export default function Navbar() {
                 height={32} // Logonuzun yüksekliği
                 className="mr-2 rounded-full" // Logoya biraz marj ve yuvarlaklık ekledik
               />
-              <span className="font-serif text-xl font-bold text-neutral-900">Muhammed Taha Bezci</span>
+              <span className="font-serif text-xl font-bold text-neutral-900">Veysel Saydut</span>
             </Link>
           </div>
           
