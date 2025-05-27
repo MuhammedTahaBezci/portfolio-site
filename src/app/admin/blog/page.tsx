@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc, QueryDocumentSnapshot } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import Sidebar from "@/components/Sidebar";
@@ -20,21 +20,30 @@ export default function AdminBlogPage() {
   }, []);
 
   const fetchPosts = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, "blogPosts"));
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as BlogPost[];
-      
-      // Tarihe göre sıralama
-      data.sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
-      setPosts(data);
-    } catch (error) {
-      console.error("Yazılar alınamadı:", error);
-      alert("Yazılar yüklenirken hata oluştu.");
-    }
-  };
+  try {
+    const snapshot = await getDocs(collection(db, "blogPosts"));
+    const data = snapshot.docs
+      .map((doc: QueryDocumentSnapshot) => {
+        const raw = doc.data();
+        if (!raw.title || !raw.publishDate || !raw.content) return null;
+
+        return {
+          id: doc.id,
+          ...raw,
+        } as BlogPost;
+      })
+      .filter(Boolean) as BlogPost[];
+
+    data.sort((a: BlogPost, b: BlogPost) => {
+      return new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime();
+    });
+
+    setPosts(data);
+  } catch (error) {
+    console.error("Yazılar alınamadı:", error);
+    alert("Yazılar yüklenirken hata oluştu.");
+  }
+};
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

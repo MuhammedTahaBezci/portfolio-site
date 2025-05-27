@@ -3,7 +3,6 @@
 import { getAboutData } from '@/lib/about';
 import { Metadata } from 'next';
 import AboutContent from '@/components/AboutContent';
-import { AboutData } from '@/types/about';
 
 // Next.js'in Metadata API'si ile sayfa başlığını ve açıklamasını dinamik olarak ayarlar.
 export async function generateMetadata(): Promise<Metadata> {

@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { getAboutData, updateAboutData } from '@/lib/about';
-import { AboutData, EducationItem } from '@/types/about'; // Arayüzlerin doğru yoldan import edildiğinden emin olun
+import { AboutData } from '@/types/about'; // Arayüzlerin doğru yoldan import edildiğinden emin olun
 import Image from 'next/image';
 import Sidebar from "@/components/Sidebar"; // Sidebar'ı import etmeyi unutmayın
 

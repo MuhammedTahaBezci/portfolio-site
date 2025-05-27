@@ -33,10 +33,10 @@ interface ExhibitionData {
   galleryUrl?: string;
 }
 
-function formatDateInput(date: any) {
+function formatDateInput(date: Date | Timestamp | null | undefined): string {
   try {
     if (!date) return "";
-    const d = date.toDate ? date.toDate() : new Date(date);
+    const d = date instanceof Timestamp ? date.toDate() : date as Date;
     return d.toISOString().split("T")[0];
   } catch (error) {
     return "";
@@ -125,23 +125,24 @@ export default function AdminExhibitionsPage() {
     setLoading(true);
 
     try {
-      const exhibitionData = {
-        title: selected.title.trim(),
-        startDate: Timestamp.fromDate(
-          selected.startDate instanceof Timestamp
-            ? selected.startDate.toDate()
-            : new Date(selected.startDate)
-        ),
-        endDate: Timestamp.fromDate(
-          selected.endDate instanceof Timestamp
-            ? selected.endDate.toDate()
-            : new Date(selected.endDate)
-        ),
-        location: selected.location?.trim() || "",
-        description: selected.description?.trim() || "",
-        galleryName: selected.galleryName?.trim() || "",
-        galleryUrl: selected.galleryUrl?.trim() || "",
-      };
+      const exhibitionData: Partial<ExhibitionData> = {
+  title: selected.title.trim(),
+  startDate: Timestamp.fromDate(
+    selected.startDate instanceof Timestamp
+      ? selected.startDate.toDate()
+      : new Date(selected.startDate)
+  ),
+  endDate: Timestamp.fromDate(
+    selected.endDate instanceof Timestamp
+      ? selected.endDate.toDate()
+      : new Date(selected.endDate)
+  ),
+  location: selected.location?.trim() || "",
+  description: selected.description?.trim() || "",
+  galleryName: selected.galleryName?.trim() || "",
+  galleryUrl: selected.galleryUrl?.trim() || "",
+};
+
 
       if (selected.id) {
         // Güncelleme
@@ -150,7 +151,7 @@ export default function AdminExhibitionsPage() {
         // Kapak resmi güncelleme
         const coverImageUrl = await uploadCoverImage(selected.id);
         if (coverImageUrl) {
-          (exhibitionData as any).imageUrl = coverImageUrl;
+          exhibitionData.imageUrl = coverImageUrl;
         }
 
         // Galeri resimleri güncelleme
@@ -158,7 +159,7 @@ export default function AdminExhibitionsPage() {
         if (newGalleryImages.length > 0) {
           // Mevcut resimlere yenilerini ekle
           const existingImages = selected.images || [];
-          (exhibitionData as any).images = [...existingImages, ...newGalleryImages];
+          exhibitionData.images = [...existingImages, ...newGalleryImages];
         }
 
         await updateDoc(docRef, exhibitionData);
@@ -172,9 +173,10 @@ export default function AdminExhibitionsPage() {
         const galleryUrls = await uploadGalleryImages(docRef.id);
 
         // Resimleri güncelle
-        const updateData: any = {};
+        const updateData:  Partial<ExhibitionData> = {};
         if (coverImageUrl) updateData.imageUrl = coverImageUrl;
         if (galleryUrls.length > 0) updateData.images = galleryUrls;
+
 
         if (Object.keys(updateData).length > 0) {
           await updateDoc(docRef, updateData);
