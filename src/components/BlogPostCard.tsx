@@ -56,7 +56,7 @@ export default function BlogPostCard({ post }: BlogPostCardProps) {
                 </span>
               ))}
               {post.tags.length > 3 && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-neutral-100 text-neutral-600"> /* Diğer etiket rengi güncellendi */
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-neutral-100 text-neutral-600"> 
                   +{post.tags.length - 3}
                 </span>
               )}

@@ -1,13 +1,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { getPaintings, getExhibitions, getBlogPosts } from '@/lib/utils';
-import ImageCard from '@/components/ImageCard';
 import BlogPostCard from '@/components/BlogPostCard';
 
 export default async function Home() {
-  // Ana sayfada gösterilecek içerikleri getirelim
-  const latestPaintings = await getPaintings();
-  const featuredPaintings = latestPaintings.slice(0, 3); // İlk 3 eseri göster
   
   const allExhibitions = await getExhibitions();
   // getExhibitions artık sıralı geliyor, en öncelikli sergiyi al

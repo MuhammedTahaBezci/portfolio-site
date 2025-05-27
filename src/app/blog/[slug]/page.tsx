@@ -1,5 +1,6 @@
 'use client'
 
+import type { BlogPost } from '@/types/blog';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -11,7 +12,7 @@ export default function BlogDetailPage() {
   const params = useParams();
   const slug = params?.slug as string;
 
-  const [post, setPost] = useState<any>(null);
+  const [post, setPost] = useState<BlogPost | null>(null);
 
   useEffect(() => {
     if (!slug) return;

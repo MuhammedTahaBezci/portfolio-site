@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, ChangeEvent } from "react";
+import Image from "next/image";
 import {
   collection,
   getDocs,
@@ -39,6 +40,7 @@ function formatDateInput(date: Date | Timestamp | null | undefined): string {
     const d = date instanceof Timestamp ? date.toDate() : date as Date;
     return d.toISOString().split("T")[0];
   } catch (error) {
+    console.error("Tarih formatlama hatası:", error);
     return "";
   }
 }
@@ -268,16 +270,20 @@ export default function AdminExhibitionsPage() {
             >
               <div onClick={() => setSelected(exh)}>
                 {exh.imageUrl ? (
-                  <img
-                    src={exh.imageUrl}
-                    alt={exh.title}
-                    className="h-32 w-full object-cover rounded mb-2"
-                  />
-                ) : (
-                  <div className="h-32 w-full bg-gray-200 rounded mb-2 flex items-center justify-center text-gray-500">
-                    Resim Yok
-                  </div>
-                )}
+  <div className="relative h-32 w-full mb-2">
+    <Image
+      src={exh.imageUrl}
+      alt={exh.title}
+      layout="fill"
+      objectFit="cover"
+      className="rounded"
+    />
+  </div>
+) : (
+  <div className="h-32 w-full bg-gray-200 rounded mb-2 flex items-center justify-center text-gray-500">
+    Resim Yok
+  </div>
+)}
                 <h3 className="font-semibold text-sm mb-1 truncate">{exh.title}</h3>
                 <p className="text-xs text-gray-600">{exh.location}</p>
               </div>
@@ -387,63 +393,50 @@ export default function AdminExhibitionsPage() {
                     rows={4}
                     className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </div>
+</div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Kapak Resmi</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
-                    className="w-full p-2 border rounded"
-                  />
-                  {selected.imageUrl && (
-                    <div className="mt-2">
-                      <img
-                        src={selected.imageUrl}
-                        alt="Mevcut kapak resmi"
-                        className="h-20 w-32 object-cover rounded"
-                      />
-                    </div>
-                  )}
-                </div>
+<div>
+  <label className="block text-sm font-medium mb-1">Kapak Resmi</label>
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
+    className="w-full"
+  />
+</div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Galeri Resimleri</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => setGalleryImages(e.target.files)}
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
+<div>
+  <label className="block text-sm font-medium mb-1">Galeri Fotoğrafları</label>
+  <input
+    type="file"
+    accept="image/*"
+    multiple
+    onChange={(e) => setGalleryImages(e.target.files)}
+    className="w-full"
+  />
+</div>
+
+{/* Galeri görselleri listeleme ve silme */}
+{selected.images && selected.images.length > 0 && (
+  <div>
+    <label className="block text-sm font-medium mb-1">Yüklenmiş Galeri Fotoğrafları</label>
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
+      {selected.images.map((url, index) => (
+        <div key={index} className="relative">
+          <Image src={url} alt={`Galeri Resim ${index + 1}`} width={200} height={150} className="rounded object-cover" />
+          <button
+            onClick={() => removeGalleryImage(url)}
+            className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 rounded"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
               </div>
             </div>
-
-            {/* Mevcut Galeri Resimleri */}
-            {selected.images && selected.images.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-sm font-medium mb-2">Mevcut Galeri Resimleri</h3>
-                <div className="grid grid-cols-4 gap-2">
-                  {selected.images.map((imageUrl, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={imageUrl}
-                        alt={`Galeri resmi ${index + 1}`}
-                        className="h-20 w-full object-cover rounded"
-                      />
-                      <button
-                        onClick={() => removeGalleryImage(imageUrl)}
-                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs hover:bg-red-600"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <div className="mt-6 flex gap-2">
               <button

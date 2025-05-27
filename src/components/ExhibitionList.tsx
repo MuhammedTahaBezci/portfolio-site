@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { Exhibition, getExhibitionStatus } from "@/types/exhibition";
 import ExhibitionModal from "./ExhibitionModal"; 
@@ -75,19 +76,22 @@ export default function ExhibitionList({ exhibitions }: ExhibitionListProps) {
               </div>
 
               {/* Exhibition Image */}
-              <div className="aspect-[4/3] overflow-hidden">
-                {exhibition.imageUrl ? (
-                  <img
-                    src={typeof exhibition.imageUrl === 'string' ? exhibition.imageUrl : exhibition.imageUrl}
-                    alt={exhibition.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-neutral-200 flex items-center justify-center">
-                    <span className="text-neutral-400 text-4xl">🎨</span>
-                  </div>
-                )}
-              </div>
+<div className="aspect-[4/3] overflow-hidden relative">
+  {exhibition.imageUrl ? (
+    <Image
+      src={typeof exhibition.imageUrl === 'string' ? exhibition.imageUrl : exhibition.imageUrl}
+      alt={exhibition.title}
+      fill
+      className="object-cover group-hover:scale-105 transition-transform duration-300"
+      sizes="(max-width: 768px) 100vw, 33vw"
+      priority={false}
+    />
+  ) : (
+    <div className="w-full h-full bg-neutral-200 flex items-center justify-center">
+      <span className="text-neutral-400 text-4xl">🎨</span>
+    </div>
+  )}
+</div>
 
               {/* Exhibition Info */}
               <div className="p-4">

@@ -1,7 +1,7 @@
 // context/AuthContext.tsx
 'use client'; // Bu bir istemci (client) bileşeni olmalı
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import { onAuthStateChanged, User, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase'; // Firebase yapılandırmanızın yolunu kontrol edin
 import { useRouter, usePathname } from 'next/navigation'; // Next.js 13+ App Router için gerekli
@@ -25,7 +25,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname(); // Mevcut sayfa yolunu almak için
 
   // Ortam değişkeninden yönetici e-postalarını alıyoruz
-  const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(email => email.trim()) || [];
+  const adminEmails = useMemo(
+    () => process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(email => email.trim()) || [],
+    []
+  );
 
   useEffect(() => {
     // Firebase'in oturum açma durumu değiştiğinde çalışacak listener

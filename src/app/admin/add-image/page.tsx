@@ -12,7 +12,6 @@ const AddImagePage = () => { // Bileşenin adını sayfa olduğunu belirtmek iç
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
-  const [imageUrl, setImageUrl] = useState<string>("");
 
   const [title, setTitle] = useState("");
   const [year, setYear] = useState("");
@@ -61,7 +60,6 @@ const AddImagePage = () => { // Bileşenin adını sayfa olduğunu belirtmek iç
       async () => {
         try {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          setImageUrl(downloadURL);
 
           await addDoc(collection(db, "painting"), {
             title,

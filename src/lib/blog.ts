@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, orderBy, query } from "firebase/firestore"
+import { doc, getDoc } from "firebase/firestore"
 import { db } from "./firebase"
 
 
@@ -15,6 +15,6 @@ export async function getBlogPostBySlug(slug: string) {
     title: data.title,
     publishDate: data.publishDate,
     content: data.content,
-    imageUrl: data.imageUrl || "", // boş bırakılabilir
+    imageUrl: data.imageUrl || "", 
   };
 }

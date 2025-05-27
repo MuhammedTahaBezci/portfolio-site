@@ -2,7 +2,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { AboutData, EducationItem } from '@/types/about';
+import { AboutData } from '@/types/about';
 
 interface AboutContentProps {
   aboutData: AboutData;

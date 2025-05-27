@@ -1,6 +1,6 @@
 // src/components/ExhibitionModal.tsx
 "use client"; // Bu direktif, Next.js 14+ (App Router) için çok önemlidir, çünkü client-side Hook'lar kullanıyoruz.
-
+import Image from 'next/image';
 import { useEffect, useState } from "react";
 import { Exhibition } from "@/types/exhibition"; 
 // Eğer next/image kullanmak isterseniz: import Image from 'next/image';
@@ -95,9 +95,11 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
                 <>
                   {/* Ana Görsel */}
                   {/* next/image yerine direkt img etiketi kullanıldı, ihtiyaca göre Image bileşenine çevrilebilir. */}
-                  <img
+                  <Image
                     src={allImages[currentImageIndex]}
                     alt={exhibition.title}
+                    width={800} // İsteğe bağlı genişlik
+                    height={600} // İsteğe bağlı yükseklik
                     className="w-full h-auto object-contain" 
                     style={{ maxHeight: '80vh' }} 
                   />
@@ -238,7 +240,9 @@ export default function ExhibitionModal({ exhibition, onClose }: ExhibitionModal
                               : "border-neutral-200 hover:border-neutral-300" 
                           }`}
                         >
-                          <img
+                          <Image
+                            width={150} // İsteğe bağlı genişlik
+                            height={150} // İsteğe bağlı yükseklik
                             src={image}
                             alt={`${exhibition.title} - ${index + 1}`}
                             className="w-full h-full object-cover"

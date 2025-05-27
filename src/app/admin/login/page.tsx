@@ -6,6 +6,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth'; // Giriş yapmak iç
 import { auth } from '@/lib/firebase'; // Firebase auth objesi
 import { useRouter, useSearchParams } from 'next/navigation'; // Yönlendirme ve URL parametreleri için
 import { useAuth } from '@/contexts/AuthContext'; // AuthContext'ten bilgileri almak için
+import { FirebaseError } from 'firebase/app';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -50,7 +51,8 @@ export default function LoginPage() {
         await auth.signOut(); // Hemen oturumunu kapat
         setError('Bu hesap yönetici paneline erişim yetkisine sahip değil.');
       }
-    } catch (err: any) {
+    } catch (err) {
+      if (err instanceof FirebaseError) {
       console.error('Giriş hatası:', err.code, err.message);
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
         setError('E-posta veya şifre yanlış.');
@@ -59,9 +61,12 @@ export default function LoginPage() {
       } else {
         setError('Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyin.');
       }
-    } finally {
-      setLoading(false); // Yükleme durumunu kapat
+    } else {
+      setError('Bilinmeyen bir hata oluştu.');
     }
+  } finally {
+    setLoading(false);
+  }
   };
 
   // AuthContext yüklenirken veya kullanıcı zaten admin ise boş/yükleniyor göster
