@@ -7,12 +7,11 @@ export default function Footer() {
   return (
     <footer className="bg-neutral-800 text-neutral-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start"> {/* Izgara yapısını 2 sütuna ayarladık */}
-          {/* Sol Sütun: Logo ve Site Adı */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start"> 
           <div className="flex flex-col items-start">
             <Link href="/" className="flex items-center mb-2">
               <Image
-                src="/images/logo1.png" // Logo dosyanızın public klasöründeki yolu
+                src="/images/logo1.png" 
                 alt="Muhammed Taha Bezci Logo"
                 width={45}
                 height={45}

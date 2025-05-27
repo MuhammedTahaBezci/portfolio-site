@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { getPaintings, getExhibitions, getBlogPosts } from '@/lib/utils';
+import { getExhibitions, getBlogPosts } from '@/lib/utils';
 import BlogPostCard from '@/components/BlogPostCard';
 
 export default async function Home() {

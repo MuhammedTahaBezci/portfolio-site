@@ -2,19 +2,22 @@
 
 import { useState, FormEvent } from 'react';
 import { sendContactMessage } from '@/lib/contact';
+import React, { ButtonHTMLAttributes } from 'react';
+import Card from '@/components/Card';
 
-// Button Component
 const Button = ({
   children,
   className = "",
   type = "button",
   disabled = false,
   ...props
-}: React.PropsWithChildren<{
-  className?: string;
-  type?: "button" | "submit" | "reset";
-  disabled?: boolean;
-}>) => {
+}: React.PropsWithChildren<
+  {
+    className?: string;
+    type?: "button" | "submit" | "reset";
+    disabled?: boolean;
+  } & ButtonHTMLAttributes<HTMLButtonElement>
+>) => {
   return (
     <button
       type={type}
@@ -32,17 +35,6 @@ const Button = ({
   );
 };
 
-// Card Component
-const Card = ({
-  children,
-  className = "",
-}: React.PropsWithChildren<{ className?: string }>) => {
-  return (
-    <div className={`bg-white shadow-xl rounded-xl p-8 md:p-10 border border-neutral-100 ${className}`}>
-      {children}
-    </div>
-  );
-};
 
 export default function ContactForm() {
   const [name, setName] = useState('');

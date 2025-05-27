@@ -6,6 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import Sidebar from "@/components/Sidebar";
 import { BlogPost } from "@/types/blog";
+import Image from "next/image";
 
 export default function AdminBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -271,7 +272,7 @@ export default function AdminBlogPage() {
                 >
                   <div onClick={() => setSelected(post)}>
                     {post.imageUrl && (
-                      <img
+                      <Image
                         src={post.imageUrl}
                         alt={post.title}
                         className="h-32 w-full object-cover"
@@ -406,7 +407,7 @@ export default function AdminBlogPage() {
                       />
                       {selected.imageUrl && (
                         <div className="relative">
-                          <img
+                          <Image
                             src={selected.imageUrl}
                             alt="Kapak resmi"
                             className="w-full h-32 object-cover rounded-lg"

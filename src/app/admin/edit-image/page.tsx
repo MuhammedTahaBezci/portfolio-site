@@ -5,10 +5,8 @@ import { useEffect, useState } from "react";
 import { storage, db } from "@/lib/firebase";
 import {
   ref,
-  listAll, // Bu import bu dosyada kullanılmıyor, kaldırılabilir.
   getDownloadURL,
   uploadBytesResumable,
-  deleteObject, // Bu import da şu an kullanılmıyor, istenirse eklenebilir.
 } from "firebase/storage";
 import {
   collection,
@@ -126,11 +124,6 @@ export default function EditImagePage() {
     setErrorMessage(null);
 
     try {
-      // ÖNEMLİ NOT: Eğer aynı resim farklı yerlerde kullanılıyorsa, eski resmi silmek sorun yaratabilir.
-      // Bu kısım projenizin ihtiyacına göre ayarlanmalıdır. Eğer sadece 1:1 resim değiştiriliyorsa silinebilir.
-      // const oldRef = ref(storage, selected.imageUrl);
-      // await deleteObject(oldRef);
-
       // Yeni resmi yükle
       const newRef = ref(storage, `paintings/${newImage.name}`); // `paintings` klasörüne yüklüyoruz
       const uploadTask = uploadBytesResumable(newRef, newImage);
