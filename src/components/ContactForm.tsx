@@ -2,22 +2,19 @@
 
 import { useState, FormEvent } from 'react';
 import { sendContactMessage } from '@/lib/contact';
-import React, { ButtonHTMLAttributes } from 'react';
 import Card from '@/components/Card';
-
+// Button Component
 const Button = ({
   children,
   className = "",
   type = "button",
   disabled = false,
   ...props
-}: React.PropsWithChildren<
-  {
-    className?: string;
-    type?: "button" | "submit" | "reset";
-    disabled?: boolean;
-  } & ButtonHTMLAttributes<HTMLButtonElement>
->) => {
+}: React.PropsWithChildren<{
+  className?: string;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
+}>) => {
   return (
     <button
       type={type}
@@ -34,6 +31,7 @@ const Button = ({
     </button>
   );
 };
+
 
 
 export default function ContactForm() {
