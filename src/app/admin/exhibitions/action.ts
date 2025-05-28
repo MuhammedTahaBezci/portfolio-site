@@ -127,7 +127,7 @@ export async function removeGalleryImage(exhibitionId: string, imageUrl: string,
 
 export async function updateExhibitionImages(exhibitionId: string, imageUrl?: string, images?: string[]) {
   try {
-    const updateData: any = {}
+    const updateData: { imageUrl?: string; images?: string[] } = {}
     if (imageUrl) updateData.imageUrl = imageUrl
     if (images) updateData.images = images
 
