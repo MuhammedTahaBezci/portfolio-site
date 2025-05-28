@@ -1,18 +1,14 @@
 // app/admin/about/page.tsx
-"use client"; // Client Component olarak işaretlemek önemli
+"use client";
 
 import { useEffect, useState } from 'react';
-import { getAboutData, updateAboutData } from '@/lib/about';
-import { AboutData } from '@/types/about'; // Arayüzlerin doğru yoldan import edildiğinden emin olun
+import { getAboutData } from '@/lib/about';
+import { updateAboutDataAction } from './actions'; // Server Action'ı import et
+import { AboutData } from '@/types/about';
 import Image from 'next/image';
-import Sidebar from "@/components/Sidebar"; // Sidebar'ı import etmeyi unutmayın
+import Sidebar from "@/components/Sidebar";
 
 export default function AdminAboutPage() {
-  // useAuth gibi bir hook ile kullanıcı yetkilendirmesini kontrol edebilirsiniz.
-  // const { user, loading: authLoading } = useAuth();
-  // if (authLoading) return <p>Yükleniyor...</p>;
-  // if (!user) return <p>Giriş yapmanız gerekiyor.</p>;
-
   const [aboutData, setAboutData] = useState<AboutData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -20,7 +16,8 @@ export default function AdminAboutPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-
+  // Beceriler için ayrı bir state - ham metin olarak
+  const [skillsText, setSkillsText] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,7 +26,9 @@ export default function AdminAboutPage() {
       const data = await getAboutData();
       if (data) {
         setAboutData(data);
-        setPreviewImage(data.artistPortrait); // Mevcut resmi önizlemeye ayarla
+        setPreviewImage(data.artistPortrait);
+        // Becerileri metin olarak ayarla
+        setSkillsText(data.skills.join(', '));
       } else {
         setError('Hakkımda verileri yüklenemedi.');
       }
@@ -43,7 +42,6 @@ export default function AdminAboutPage() {
     setAboutData(prevData => prevData ? { ...prevData, [name]: value } : null);
   };
 
-  // Eğitim öğeleri için özel değişiklik işleyicisi
   const handleEducationChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (aboutData) {
@@ -53,22 +51,20 @@ export default function AdminAboutPage() {
     }
   };
 
-  // Eğitim öğesi ekle
   const addEducationItem = () => {
     if (aboutData) {
       const newEducation = [...aboutData.education, {
-        id: Date.now().toString(), // Basit bir ID
+        id: Date.now().toString(),
         startYear: '',
         endYear: '',
         degree: '',
         institution: '',
-        order: aboutData.education.length + 1 // Sonraya ekle
+        order: aboutData.education.length + 1
       }];
       setAboutData({ ...aboutData, education: newEducation });
     }
   };
 
-  // Eğitim öğesi sil
   const removeEducationItem = (id: string) => {
     if (aboutData) {
       const newEducation = aboutData.education.filter(item => item.id !== id);
@@ -76,22 +72,21 @@ export default function AdminAboutPage() {
     }
   };
 
-  // Beceriler için değişiklik işleyicisi (örneğin virgülle ayrılmış metin)
+  // Beceriler için güncellenmiş fonksiyon - sadece metin state'ini günceller
   const handleSkillsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { value } = e.target;
-    if (aboutData) {
-      setAboutData({ ...aboutData, skills: value.split(',').map(s => s.trim()).filter(s => s !== '') });
-    }
+    setSkillsText(value);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedImage(file);
-      setPreviewImage(URL.createObjectURL(file)); // Yeni resmi önizle
+      setPreviewImage(URL.createObjectURL(file));
     }
   };
 
+  // Form Action kullanarak Server Action'ı çağır
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!aboutData) return;
@@ -100,79 +95,115 @@ export default function AdminAboutPage() {
     setError(null);
     setSuccess(null);
 
-    // contactButtonText'i göndermiyoruz, çünkü o sabit kalacak.
-    const dataToSave: Partial<AboutData> = { ...aboutData };
-    // contactButtonText: 'İletişime Geç' // Gerekirse sabit değeri burada belirtilebilir, ama update fonksiyonunda zaten ignore ediyoruz.
-
-    const success = await updateAboutData(dataToSave, selectedImage || undefined);
-
-    if (success) {
-      setSuccess('Hakkımda bilgileri başarıyla güncellendi!');
-      setSelectedImage(null); // Yüklenen resmi temizle
-      // Verileri tekrar çekmek isterseniz:
-      // const updatedData = await getAboutData();
-      // if (updatedData) setAboutData(updatedData);
-    } else {
-      setError('Hakkımda bilgileri güncellenirken bir hata oluştu.');
+    try {
+      // FormData oluştur
+      const formData = new FormData();
+      
+      // Becerileri işle - metinden diziye çevir
+      const processedSkills = skillsText
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s !== '');
+      
+      // Tüm verileri FormData'ya ekle
+      formData.append('title', aboutData.title);
+      formData.append('description', aboutData.description);
+      formData.append('artistName', aboutData.artistName);
+      formData.append('biography', aboutData.biography);
+      formData.append('artisticJourney', aboutData.artisticJourney);
+      formData.append('artPhilosophy', aboutData.artPhilosophy);
+      formData.append('contactMessage', aboutData.contactMessage);
+      formData.append('skills', JSON.stringify(processedSkills));
+      formData.append('education', JSON.stringify(aboutData.education));
+      
+      // Resim dosyasını ekle
+      if (selectedImage) {
+        formData.append('artistPortrait', selectedImage);
+      }
+      
+      // Server Action'ı çağır
+      const result = await updateAboutDataAction(formData);
+      
+      if (result.success) {
+        setSuccess(result.message);
+        setSelectedImage(null);
+        
+        // Verileri yeniden yükle
+        const updatedData = await getAboutData();
+        if (updatedData) {
+          setAboutData(updatedData);
+          setPreviewImage(updatedData.artistPortrait);
+          setSkillsText(updatedData.skills.join(', '));
+        }
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      setError('Beklenmeyen bir hata oluştu.');
     }
+
     setSaving(false);
-    setTimeout(() => { setSuccess(null); setError(null); }, 3000); // Mesajları 3 saniye sonra gizle
+    setTimeout(() => { setSuccess(null); setError(null); }, 3000);
   };
 
   if (loading) {
     return (
-        <div className="flex min-h-screen bg-gray-100">
-            <Sidebar />
-            <div className="flex-1 p-6 md:p-8 flex items-center justify-center">
-                <p className="text-gray-700">Yükleniyor...</p>
-            </div>
+      <div className="flex min-h-screen bg-gray-100">
+        <Sidebar />
+        <div className="flex-1 p-6 md:p-8 flex items-center justify-center">
+          <p className="text-gray-700">Yükleniyor...</p>
         </div>
+      </div>
     );
   }
 
   if (error && !aboutData) {
     return (
-        <div className="flex min-h-screen bg-gray-100">
-            <Sidebar />
-            <div className="flex-1 p-6 md:p-8 flex items-center justify-center">
-                <p className="text-red-600">{error}</p>
-            </div>
+      <div className="flex min-h-screen bg-gray-100">
+        <Sidebar />
+        <div className="flex-1 p-6 md:p-8 flex items-center justify-center">
+          <p className="text-red-600">{error}</p>
         </div>
+      </div>
     );
   }
 
   if (!aboutData) {
-      return (
-        <div className="flex min-h-screen bg-gray-100">
-            <Sidebar />
-            <div className="flex-1 p-6 md:p-8 flex items-center justify-center">
-                <p className="text-gray-700">Veri bulunamadı.</p>
-            </div>
+    return (
+      <div className="flex min-h-screen bg-gray-100">
+        <Sidebar />
+        <div className="flex-1 p-6 md:p-8 flex items-center justify-center">
+          <p className="text-gray-700">Veri bulunamadı.</p>
         </div>
-      );
+      </div>
+    );
   }
 
   return (
-    // En dıştaki div: Flexbox kullanarak Sidebar ve içeriği yan yana dizer
-    // min-h-screen: Sayfanın en az ekran yüksekliği kadar olmasını sağlar
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar bileşeni */}
       <Sidebar />
-
-      {/* Ana içerik alanı */}
-      {/* flex-1: Kalan tüm boş alanı kaplamasını sağlar */}
-      {/* p-6 md:p-8: Responsive padding ayarları */}
       <div className="flex-1 p-6 md:p-8">
         <h1 className="text-3xl font-bold mb-6 text-gray-800">Hakkımda Bilgilerini Yönet</h1>
 
-        <div className="max-w-4xl mx-auto"> {/* İçerik formu için max-width ve margin-auto */}
-          {success && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">{success}</div>}
-          {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">{error}</div>}
+        <div className="max-w-4xl mx-auto">
+          {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
+              {success}
+            </div>
+          )}
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-md">
             {/* Başlık */}
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Sayfa Başlığı</label>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                Sayfa Başlığı
+              </label>
               <input
                 type="text"
                 id="title"
@@ -185,7 +216,9 @@ export default function AdminAboutPage() {
 
             {/* Açıklama */}
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Sayfa Açıklaması</label>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                Sayfa Açıklaması
+              </label>
               <textarea
                 id="description"
                 name="description"
@@ -193,12 +226,14 @@ export default function AdminAboutPage() {
                 onChange={handleChange}
                 rows={2}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-yellow-500 focus:border-yellow-500"
-              ></textarea>
+              />
             </div>
 
             {/* Sanatçı Adı */}
             <div>
-              <label htmlFor="artistName" className="block text-sm font-medium text-gray-700 mb-1">Sanatçı Adı</label>
+              <label htmlFor="artistName" className="block text-sm font-medium text-gray-700 mb-1">
+                Sanatçı Adı
+              </label>
               <input
                 type="text"
                 id="artistName"
@@ -209,9 +244,11 @@ export default function AdminAboutPage() {
               />
             </div>
 
-            {/* Sanatçı Portresi Yükleme */}
+            {/* Sanatçı Portresi */}
             <div>
-              <label htmlFor="artistPortrait" className="block text-sm font-medium text-gray-700 mb-1">Sanatçı Portresi</label>
+              <label htmlFor="artistPortrait" className="block text-sm font-medium text-gray-700 mb-1">
+                Sanatçı Portresi
+              </label>
               <input
                 type="file"
                 id="artistPortrait"
@@ -237,7 +274,9 @@ export default function AdminAboutPage() {
 
             {/* Biyografi */}
             <div>
-              <label htmlFor="biography" className="block text-sm font-medium text-gray-700 mb-1">Biyografi</label>
+              <label htmlFor="biography" className="block text-sm font-medium text-gray-700 mb-1">
+                Biyografi
+              </label>
               <textarea
                 id="biography"
                 name="biography"
@@ -245,12 +284,14 @@ export default function AdminAboutPage() {
                 onChange={handleChange}
                 rows={5}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-yellow-500 focus:border-yellow-500"
-              ></textarea>
+              />
             </div>
 
             {/* Sanatsal Yolculuk */}
             <div>
-              <label htmlFor="artisticJourney" className="block text-sm font-medium text-gray-700 mb-1">Sanatsal Yolculuk</label>
+              <label htmlFor="artisticJourney" className="block text-sm font-medium text-gray-700 mb-1">
+                Sanatsal Yolculuk
+              </label>
               <textarea
                 id="artisticJourney"
                 name="artisticJourney"
@@ -258,12 +299,14 @@ export default function AdminAboutPage() {
                 onChange={handleChange}
                 rows={5}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-yellow-500 focus:border-yellow-500"
-              ></textarea>
+              />
             </div>
 
             {/* Sanat Felsefesi */}
             <div>
-              <label htmlFor="artPhilosophy" className="block text-sm font-medium text-gray-700 mb-1">Sanat Felsefesi</label>
+              <label htmlFor="artPhilosophy" className="block text-sm font-medium text-gray-700 mb-1">
+                Sanat Felsefesi
+              </label>
               <textarea
                 id="artPhilosophy"
                 name="artPhilosophy"
@@ -271,7 +314,7 @@ export default function AdminAboutPage() {
                 onChange={handleChange}
                 rows={5}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-yellow-500 focus:border-yellow-500"
-              ></textarea>
+              />
             </div>
 
             {/* Eğitim Bilgileri */}
@@ -329,22 +372,48 @@ export default function AdminAboutPage() {
               </button>
             </div>
 
-            {/* Beceriler */}
+            {/* Beceriler - Güncellenmiş */}
             <div>
-              <label htmlFor="skills" className="block text-sm font-medium text-gray-700 mb-1">Beceriler (Virgülle Ayırın)</label>
+              <label htmlFor="skills" className="block text-sm font-medium text-gray-700 mb-1">
+                Beceriler (Virgülle Ayırın)
+              </label>
               <textarea
                 id="skills"
                 name="skills"
-                value={aboutData.skills.join(', ')} // Diziyi metne çevir
+                value={skillsText}
                 onChange={handleSkillsChange}
                 rows={3}
+                placeholder="React, JavaScript, TypeScript, Node.js, Python"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-yellow-500 focus:border-yellow-500"
-              ></textarea>
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                Her beceriyi virgülle ayırarak yazın. Örnek: React, JavaScript, TypeScript
+              </p>
+              {/* Önizleme */}
+              {skillsText && (
+                <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                  <p className="text-sm text-gray-600 font-medium mb-1">Önizleme:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {skillsText.split(',').map((skill, index) => (
+                      skill.trim() && (
+                        <span 
+                          key={index} 
+                          className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs"
+                        >
+                          {skill.trim()}
+                        </span>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* İletişim Mesajı */}
             <div>
-              <label htmlFor="contactMessage" className="block text-sm font-medium text-gray-700 mb-1">İletişim Mesajı</label>
+              <label htmlFor="contactMessage" className="block text-sm font-medium text-gray-700 mb-1">
+                İletişim Mesajı
+              </label>
               <textarea
                 id="contactMessage"
                 name="contactMessage"
@@ -352,18 +421,20 @@ export default function AdminAboutPage() {
                 onChange={handleChange}
                 rows={3}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-yellow-500 focus:border-yellow-500"
-              ></textarea>
+              />
             </div>
 
-            {/* İletişime Geç Buton Metni (Değiştirilemez) */}
+            {/* İletişime Geç Buton Metni */}
             <div>
-              <label htmlFor="contactButtonText" className="block text-sm font-medium text-gray-700 mb-1">İletişime Geç Buton Metni</label>
+              <label htmlFor="contactButtonText" className="block text-sm font-medium text-gray-700 mb-1">
+                İletişime Geç Buton Metni
+              </label>
               <input
                 type="text"
                 id="contactButtonText"
                 name="contactButtonText"
                 value={aboutData.contactButtonText}
-                disabled // Değiştirilemez hale getir
+                disabled
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"
               />
               <p className="mt-1 text-sm text-gray-500">Bu alan sabit kalacaktır.</p>

@@ -1,4 +1,3 @@
-//admin/exhibitions/page.tsx
 "use client";
 
 import { useState, useEffect, ChangeEvent } from "react";
@@ -6,19 +5,17 @@ import Image from "next/image";
 import {
   collection,
   getDocs,
-  doc,
-  updateDoc,
-  addDoc,
   Timestamp,
-  deleteDoc,
 } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import Sidebar from "@/components/Sidebar";
+import { saveExhibitionData, deleteExhibition, removeGalleryImage, updateExhibitionImages, revalidateExhibitions } from "@/app/admin/exhibitions/action";
 import {
   ref,
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
-import Sidebar from "@/components/Sidebar";
+import { storage } from "@/lib/firebase";
 import { v4 as uuidv4 } from "uuid";
 
 interface ExhibitionData {
@@ -28,8 +25,8 @@ interface ExhibitionData {
   endDate: Date | Timestamp;
   location: string;
   description: string;
-  imageUrl?: string; // Ana kapak resmi
-  images?: string[]; // Sergi içi fotoğrafları
+  imageUrl?: string;
+  images?: string[];
   galleryName?: string;
   galleryUrl?: string;
 }
@@ -44,6 +41,36 @@ function formatDateInput(date: Date | Timestamp | null | undefined): string {
     return "";
   }
 }
+
+// File'ı Firebase Storage'e yükleyen helper functions
+const uploadCoverImage = async (docId: string, file: File): Promise<string | null> => {
+  try {
+    const imageRef = ref(storage, `exhibition_covers/${docId}/${uuidv4()}-${file.name}`);
+    const snapshot = await uploadBytes(imageRef, file);
+    return await getDownloadURL(snapshot.ref);
+  } catch (error) {
+    console.error("Kapak resmi yüklenirken hata:", error);
+    return null;
+  }
+};
+
+const uploadGalleryImages = async (docId: string, files: FileList): Promise<string[]> => {
+  const urls: string[] = [];
+
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const imageRef = ref(storage, `exhibition_galleries/${docId}/${uuidv4()}-${file.name}`);
+      const snapshot = await uploadBytes(imageRef, file);
+      const url = await getDownloadURL(snapshot.ref);
+      urls.push(url);
+    }
+  } catch (error) {
+    console.error("Galeri resimleri yüklenirken hata:", error);
+  }
+
+  return urls;
+};
 
 export default function AdminExhibitionsPage() {
   const [exhibitions, setExhibitions] = useState<ExhibitionData[]>([]);
@@ -80,39 +107,6 @@ export default function AdminExhibitionsPage() {
     }
   };
 
-  const uploadCoverImage = async (docId: string): Promise<string | null> => {
-    if (!coverImage) return null;
-
-    try {
-      const imageRef = ref(storage, `exhibition_covers/${docId}/${uuidv4()}-${coverImage.name}`);
-      const snapshot = await uploadBytes(imageRef, coverImage);
-      return await getDownloadURL(snapshot.ref);
-    } catch (error) {
-      console.error("Kapak resmi yüklenirken hata:", error);
-      return null;
-    }
-  };
-
-  const uploadGalleryImages = async (docId: string): Promise<string[]> => {
-    if (!galleryImages) return [];
-
-    const urls: string[] = [];
-
-    try {
-      for (let i = 0; i < galleryImages.length; i++) {
-        const image = galleryImages[i];
-        const imageRef = ref(storage, `exhibition_galleries/${docId}/${uuidv4()}-${image.name}`);
-        const snapshot = await uploadBytes(imageRef, image);
-        const url = await getDownloadURL(snapshot.ref);
-        urls.push(url);
-      }
-    } catch (error) {
-      console.error("Galeri resimleri yüklenirken hata:", error);
-    }
-
-    return urls;
-  };
-
   const handleSave = async () => {
     if (!selected?.title?.trim()) {
       alert("Sergi adı zorunludur.");
@@ -127,69 +121,68 @@ export default function AdminExhibitionsPage() {
     setLoading(true);
 
     try {
-      const exhibitionData: Partial<ExhibitionData> = {
-  title: selected.title.trim(),
-  startDate: Timestamp.fromDate(
-    selected.startDate instanceof Timestamp
-      ? selected.startDate.toDate()
-      : new Date(selected.startDate)
-  ),
-  endDate: Timestamp.fromDate(
-    selected.endDate instanceof Timestamp
-      ? selected.endDate.toDate()
-      : new Date(selected.endDate)
-  ),
-  location: selected.location?.trim() || "",
-  description: selected.description?.trim() || "",
-  galleryName: selected.galleryName?.trim() || "",
-  galleryUrl: selected.galleryUrl?.trim() || "",
-};
+      // İlk olarak temel exhibition verilerini kaydet
+      const exhibitionData = {
+        id: selected.id,
+        title: selected.title,
+        startDate: (selected.startDate instanceof Timestamp 
+          ? selected.startDate.toDate() 
+          : new Date(selected.startDate)
+        ).toISOString(),
+        endDate: (selected.endDate instanceof Timestamp 
+          ? selected.endDate.toDate() 
+          : new Date(selected.endDate)
+        ).toISOString(),
+        location: selected.location || "",
+        description: selected.description || "",
+        galleryName: selected.galleryName || "",
+        galleryUrl: selected.galleryUrl || "",
+      };
 
+      // Server Action ile temel veriyi kaydet
+      const result = await saveExhibitionData(exhibitionData);
 
-      if (selected.id) {
-        // Güncelleme
-        const docRef = doc(db, "exhibitions", selected.id);
-        
-        // Kapak resmi güncelleme
-        const coverImageUrl = await uploadCoverImage(selected.id);
-        if (coverImageUrl) {
-          exhibitionData.imageUrl = coverImageUrl;
-        }
-
-        // Galeri resimleri güncelleme
-        const newGalleryImages = await uploadGalleryImages(selected.id);
-        if (newGalleryImages.length > 0) {
-          // Mevcut resimlere yenilerini ekle
-          const existingImages = selected.images || [];
-          exhibitionData.images = [...existingImages, ...newGalleryImages];
-        }
-
-        await updateDoc(docRef, exhibitionData);
-        alert("Sergi başarıyla güncellendi.");
-      } else {
-        // Yeni ekleme
-        const docRef = await addDoc(collection(db, "exhibitions"), exhibitionData);
-        
-        // Kapak resmi yükleme
-        const coverImageUrl = await uploadCoverImage(docRef.id);
-        const galleryUrls = await uploadGalleryImages(docRef.id);
-
-        // Resimleri güncelle
-        const updateData:  Partial<ExhibitionData> = {};
-        if (coverImageUrl) updateData.imageUrl = coverImageUrl;
-        if (galleryUrls.length > 0) updateData.images = galleryUrls;
-
-
-        if (Object.keys(updateData).length > 0) {
-          await updateDoc(docRef, updateData);
-        }
-
-        alert("Yeni sergi başarıyla eklendi.");
+      if (!result.success) {
+        alert(result.message);
+        return;
       }
 
-      // Sayfayı yenile
+      const docId = result.docId || selected.id!;
+
+      // Resimleri client-side upload et
+      let coverImageUrl: string | undefined;
+      let newGalleryUrls: string[] = [];
+
+      if (coverImage) {
+        const uploadedCover = await uploadCoverImage(docId, coverImage);
+        coverImageUrl = uploadedCover === null ? undefined : uploadedCover;
+      }
+
+      if (galleryImages && galleryImages.length > 0) {
+        newGalleryUrls = await uploadGalleryImages(docId, galleryImages);
+      }
+
+      // Eğer resim varsa, resimleri güncelle
+      if (coverImageUrl || newGalleryUrls.length > 0) {
+        const existingImages = selected.images || [];
+        const allImages = newGalleryUrls.length > 0 
+          ? [...existingImages, ...newGalleryUrls] 
+          : existingImages;
+
+        await updateExhibitionImages(
+          docId, 
+          coverImageUrl, 
+          newGalleryUrls.length > 0 ? allImages : undefined
+        );
+      }
+
+      // Son olarak cache'i invalidate et
+      await revalidateExhibitions();
+
+      alert(result.message);
       await fetchExhibitions();
       handleReset();
+
     } catch (error) {
       console.error("Sergi kaydedilirken hata:", error);
       alert("Sergi kaydedilirken hata oluştu.");
@@ -202,11 +195,16 @@ export default function AdminExhibitionsPage() {
     if (!confirm("Bu sergiyi silmek istediğinizden emin misiniz?")) return;
 
     try {
-      await deleteDoc(doc(db, "exhibitions", exhibitionId));
-      alert("Sergi başarıyla silindi.");
-      await fetchExhibitions();
-      if (selected?.id === exhibitionId) {
-        handleReset();
+      const result = await deleteExhibition(exhibitionId);
+      
+      if (result.success) {
+        alert(result.message);
+        await fetchExhibitions();
+        if (selected?.id === exhibitionId) {
+          handleReset();
+        }
+      } else {
+        alert(result.message);
       }
     } catch (error) {
       console.error("Sergi silinirken hata:", error);
@@ -214,25 +212,29 @@ export default function AdminExhibitionsPage() {
     }
   };
 
-  const handleReset = () => {
-    setSelected(null);
-    setCoverImage(null);
-    setGalleryImages(null);
-  };
-
-  const removeGalleryImage = async (imageUrl: string) => {
+  const handleRemoveGalleryImage = async (imageUrl: string) => {
     if (!selected?.id || !selected?.images) return;
 
     try {
-      const updatedImages = selected.images.filter(img => img !== imageUrl);
-      await updateDoc(doc(db, "exhibitions", selected.id), { images: updatedImages });
+      const remainingImages = selected.images.filter(img => img !== imageUrl);
+      const result = await removeGalleryImage(selected.id, imageUrl, remainingImages);
       
-      setSelected({ ...selected, images: updatedImages });
-      alert("Resim başarıyla kaldırıldı.");
+      if (result.success) {
+        setSelected({ ...selected, images: remainingImages });
+        alert(result.message);
+      } else {
+        alert(result.message);
+      }
     } catch (error) {
       console.error("Resim kaldırılırken hata:", error);
       alert("Resim kaldırılırken hata oluştu.");
     }
+  };
+
+  const handleReset = () => {
+    setSelected(null);
+    setCoverImage(null);
+    setGalleryImages(null);
   };
 
   return (
@@ -270,20 +272,20 @@ export default function AdminExhibitionsPage() {
             >
               <div onClick={() => setSelected(exh)}>
                 {exh.imageUrl ? (
-  <div className="relative h-32 w-full mb-2">
-    <Image
-      src={exh.imageUrl}
-      alt={exh.title}
-      layout="fill"
-      objectFit="cover"
-      className="rounded"
-    />
-  </div>
-) : (
-  <div className="h-32 w-full bg-gray-200 rounded mb-2 flex items-center justify-center text-gray-500">
-    Resim Yok
-  </div>
-)}
+                  <div className="relative h-32 w-full mb-2">
+                    <Image
+                      src={exh.imageUrl}
+                      alt={exh.title}
+                      layout="fill"
+                      objectFit="cover"
+                      className="rounded"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-32 w-full bg-gray-200 rounded mb-2 flex items-center justify-center text-gray-500">
+                    Resim Yok
+                  </div>
+                )}
                 <h3 className="font-semibold text-sm mb-1 truncate">{exh.title}</h3>
                 <p className="text-xs text-gray-600">{exh.location}</p>
               </div>
@@ -393,48 +395,54 @@ export default function AdminExhibitionsPage() {
                     rows={4}
                     className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-</div>
+                </div>
 
-<div>
-  <label className="block text-sm font-medium mb-1">Kapak Resmi</label>
-  <input
-    type="file"
-    accept="image/*"
-    onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
-    className="w-full"
-  />
-</div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Kapak Resmi</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
+                    className="w-full"
+                  />
+                </div>
 
-<div>
-  <label className="block text-sm font-medium mb-1">Galeri Fotoğrafları</label>
-  <input
-    type="file"
-    accept="image/*"
-    multiple
-    onChange={(e) => setGalleryImages(e.target.files)}
-    className="w-full"
-  />
-</div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Galeri Fotoğrafları</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => setGalleryImages(e.target.files)}
+                    className="w-full"
+                  />
+                </div>
 
-{/* Galeri görselleri listeleme ve silme */}
-{selected.images && selected.images.length > 0 && (
-  <div>
-    <label className="block text-sm font-medium mb-1">Yüklenmiş Galeri Fotoğrafları</label>
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
-      {selected.images.map((url, index) => (
-        <div key={index} className="relative">
-          <Image src={url} alt={`Galeri Resim ${index + 1}`} width={200} height={150} className="rounded object-cover" />
-          <button
-            onClick={() => removeGalleryImage(url)}
-            className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 rounded"
-          >
-            ✕
-          </button>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+                {/* Galeri görselleri listeleme ve silme */}
+                {selected.images && selected.images.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Yüklenmiş Galeri Fotoğrafları</label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
+                      {selected.images.map((url, index) => (
+                        <div key={index} className="relative">
+                          <Image 
+                            src={url} 
+                            alt={`Galeri Resim ${index + 1}`} 
+                            width={200} 
+                            height={150} 
+                            className="rounded object-cover" 
+                          />
+                          <button
+                            onClick={() => handleRemoveGalleryImage(url)}
+                            className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 rounded"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

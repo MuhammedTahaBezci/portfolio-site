@@ -15,6 +15,7 @@ export default function AdminBlogPage() {
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contentInputRef = useRef<HTMLTextAreaElement>(null);
+  const [tagsInputValue, setTagsInputValue] = useState<string>("");
 
   useEffect(() => {
     fetchPosts();
@@ -53,6 +54,21 @@ export default function AdminBlogPage() {
     const { name, value } = e.target;
     setSelected({ ...selected, [name]: value });
   };
+  
+const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (!selected) return;
+  
+  const value = e.target.value;
+  setTagsInputValue(value); // Input değerini olduğu gibi sakla
+  
+  // Sadece virgül sonrası etiketleri güncelle
+  const tags = value
+    .split(/[,，]/)
+    .map((tag: string) => tag.trim())
+    .filter((tag: string) => tag.length > 0);
+  
+  setSelected({ ...selected, tags });
+};
 
   const handleImageUpload = async (file: File): Promise<string> => {
     const fileName = `blog-images/${Date.now()}-${file.name}`;
@@ -135,25 +151,40 @@ export default function AdminBlogPage() {
     });
   };
 
-  const handleSave = async () => {
-    if (!selected || !selected.title || !selected.content) {
-      alert("Başlık ve içerik alanları zorunludur.");
-      return;
+const handleSave = async () => {
+  if (!selected || !selected.title || !selected.content) {
+    alert("Başlık ve içerik alanları zorunludur.");
+    return;
+  }
+
+  setSaving(true);
+  const isUpdate = !!selected.id;
+
+  // Etiketleri işle - eğer tek string ise böl
+  let processedTags: string[] = [];
+  if (selected.tags && selected.tags.length > 0) {
+    if (selected.tags.length === 1 && typeof selected.tags[0] === 'string') {
+      // Tek string ise virgülle böl
+      processedTags = selected.tags[0]
+        .split(/[,，]/)
+        .map((tag: string) => tag.trim())
+        .filter((tag: string) => tag.length > 0);
+    } else {
+      // Zaten array ise olduğu gibi kullan
+      processedTags = selected.tags;
     }
+  }
 
-    setSaving(true);
-    const isUpdate = !!selected.id;
-
-    const payload: Omit<BlogPost, "id"> = {
-      slug: selected.slug || generateSlug(selected.title),
-      title: selected.title,
-      excerpt: selected.excerpt || selected.content.substring(0, 150) + "...",
-      content: selected.content,
-      imageUrl: selected.imageUrl || "",
-      author: selected.author || "Admin",
-      publishDate: selected.publishDate || new Date().toISOString().split('T')[0],
-      tags: selected.tags || [],
-    };
+  const payload: Omit<BlogPost, "id"> = {
+    slug: selected.slug || generateSlug(selected.title),
+    title: selected.title,
+    excerpt: selected.excerpt || selected.content.substring(0, 150) + "...",
+    content: selected.content,
+    imageUrl: selected.imageUrl || "",
+    author: selected.author || "Admin",
+    publishDate: selected.publishDate || new Date().toISOString().split('T')[0],
+    tags: processedTags,
+  };
 
     try {
       if (isUpdate) {
@@ -270,9 +301,11 @@ export default function AdminBlogPage() {
                       : "border-gray-200 hover:border-gray-300 hover:shadow-md"
                   }`}
                 >
-                  <div onClick={() => setSelected(post)}>
+                  <div onClick={() => setSelected(post )}>
                     {post.imageUrl && (
                       <Image
+                        width={400}
+                        height={200}
                         src={post.imageUrl}
                         alt={post.title}
                         className="h-32 w-full object-cover"
@@ -376,22 +409,40 @@ export default function AdminBlogPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Etiketler
-                    </label>
-                    <input
-                      name="tags"
-                      value={(selected.tags || []).join(", ")}
-                      onChange={(e) =>
-                        setSelected({
-                          ...selected,
-                          tags: e.target.value.split(",").map((tag) => tag.trim()).filter(tag => tag),
-                        })
-                      }
-                      placeholder="sanat, resim, deneme (virgülle ayırın)"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Etiketler
+  </label>
+  <input
+  name="tags"
+  value={tagsInputValue}
+  onChange={handleTagsChange}
+  placeholder="sanat, resim, deneme (virgülle ayırın)"
+  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+/>
+  {/* Etiktleri görsel olarak göster */}
+  {selected.tags && selected.tags.length > 0 && (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {selected.tags.map((tag, index) => (
+        <span
+          key={index}
+          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+        >
+          {tag}
+          <button
+            type="button"
+            onClick={() => {
+              const newTags = selected.tags?.filter((_, i) => i !== index) || [];
+              setSelected({ ...selected, tags: newTags });
+            }}
+            className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-600 hover:bg-blue-200 hover:text-blue-800"
+          >
+            ×
+          </button>
+        </span>
+      ))}
+    </div>
+  )}
+</div>
 
                   {/* Cover Image */}
                   <div>
@@ -408,6 +459,8 @@ export default function AdminBlogPage() {
                       {selected.imageUrl && (
                         <div className="relative">
                           <Image
+                            width={400}
+                            height={200}
                             src={selected.imageUrl}
                             alt="Kapak resmi"
                             className="w-full h-32 object-cover rounded-lg"
